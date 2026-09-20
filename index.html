@@ -961,7 +961,103 @@
           {id:"q12_c",label:"ג",prompt:"באילו מן השעות הבאות ההפרש בין הטמפרטורות בשני העומקים היה גדול מ-20°C?",type:"checkbox",options:[{value:"7",label:"7 בבוקר"},{value:"12",label:"12 בצהריים"},{value:"15",label:"3 אחר הצהריים"}],expected:["12"],hint:"לכל שעה קראו את שתי הטמפרטורות והשוו את ההפרש ביניהן.",explanation:"בסביבות 12 בצהריים הטמפרטורה בעומק 1.5 ס״מ קרובה ל-55°C, בעוד שבעומק 8 ס״מ היא בערך 23°C, ולכן ההפרש גדול מ-20°C. בשעות 7 בבוקר ו-3 אחר הצהריים ההפרש קטן יותר."},
           {id:"q12_d",label:"ד",prompt:"האם ישנן שעות במשך היום שבהן הטמפרטורה בעומק 1.5 ס״מ שווה לטמפרטורה בעומק 8 ס״מ? אם כן, הוסיפו את כל השעות המתאימות בקירוב.",type:"multi_time",timeMin:0,timeMax:23,timeStep:1,expected:["10","18"],hint:"חפשו את נקודות החיתוך של שני הגרפים במהלך יום אחד.",explanation:"כן. הגרפים נחתכים בקירוב סביב 10:00 בבוקר ושוב סביב 18:00 בערב. אלה השעות שבהן הטמפרטורות בשני העומקים שוות בקירוב."}
         ]
+      },
+      {
+        id:"q13_study_scores",
+        title:"שעות הכנה וציונים במבחן במתמטיקה",
+        category:"דיאגרמת פיזור (Scatter Plot)",
+        story:"הגרף הבא מתאר את נתוני שעות ההכנה ואת הציונים של שישה תלמידים במבחן במתמטיקה.",
+        graph:{
+          type:'scatter', xLabel:"שעות הכנה למבחן", yLabel:"ציון",
+          xMin:0, xMax:10, yMin:0, yMax:10, hideTickValues:true,
+          points:[
+            {x:2.0,y:8.0,label:"א"},
+            {x:2.4,y:1.8,label:"ב"},
+            {x:5.0,y:5.1,label:"ג"},
+            {x:6.4,y:6.0,label:"ה"},
+            {x:7.0,y:2.1,label:"ו"},
+            {x:8.0,y:8.6,label:"ד"}
+          ]
+        },
+        subQuestions:[
+          {id:"q13_a",label:"1",prompt:"איזה תלמיד למד במשך מספר השעות הגדול ביותר?",type:"radio",options:[{value:"א",label:"א"},{value:"ב",label:"ב"},{value:"ג",label:"ג"},{value:"ד",label:"ד"},{value:"ה",label:"ה"},{value:"ו",label:"ו"}],expected:"ד",hint:"חפשו את הנקודה הימנית ביותר בגרף — היא מייצגת את מספר שעות ההכנה הגדול ביותר.",explanation:"התלמיד ד נמצא בנקודה הימנית ביותר, ולכן הוא למד במשך מספר השעות הגדול ביותר."},
+          {id:"q13_b",label:"2",prompt:"איזה תלמיד קיבל את הציון הנמוך ביותר?",type:"radio",options:[{value:"א",label:"א"},{value:"ב",label:"ב"},{value:"ג",label:"ג"},{value:"ד",label:"ד"},{value:"ה",label:"ה"},{value:"ו",label:"ו"}],expected:"ב",hint:"חפשו את הנקודה הנמוכה ביותר על ציר הציונים.",explanation:"התלמיד ב נמצא בגובה הנמוך ביותר על ציר הציונים, ולכן הוא קיבל את הציון הנמוך ביותר."},
+          {id:"q13_c",label:"3",prompt:"לאיזה מהתלמידים מתאימה האמירה: \"למרות כל מה שהשקעתי, לא כל כך הצלחתי\"?",type:"radio",options:[{value:"א",label:"א"},{value:"ב",label:"ב"},{value:"ג",label:"ג"},{value:"ד",label:"ד"},{value:"ה",label:"ה"},{value:"ו",label:"ו"}],expected:"ו",hint:"חפשו תלמיד שלמד הרבה שעות אך הציון שלו נמוך יחסית.",explanation:"התלמיד ו למד מספר שעות גדול יחסית, אך הציון שלו נמוך. לכן האמירה מתאימה לו."},
+          {id:"q13_d",label:"4",prompt:"לאיזה מהתלמידים מתאימה הטענה: \"הצלחתי מבלי ללמוד הרבה\"?",type:"radio",options:[{value:"א",label:"א"},{value:"ב",label:"ב"},{value:"ג",label:"ג"},{value:"ד",label:"ד"},{value:"ה",label:"ה"},{value:"ו",label:"ו"}],expected:"א",hint:"חפשו תלמיד עם מעט שעות הכנה יחסית, אך עם ציון גבוה.",explanation:"התלמיד א למד מעט יחסית אך קיבל ציון גבוה, ולכן האמירה מתאימה לו."}
+        ]
+      },
+      {
+        id:"q14_market",
+        title:"הקניות של אסף בשוק",
+        category:"דיאגרמת פיזור עם תוויות מוצרים",
+        story:"הגרף הבא מתאר את הקניות של אסף בשוק. ציר X מייצג את המשקל בקילוגרמים, וציר Y מייצג את הסכום הכולל ששולם בשקלים.",
+        graph:{
+          type:'annotated_scatter', xLabel:"משקל בק״ג", yLabel:"סה״כ מחיר בש״ח",
+          xMin:0, xMax:4, yMin:0, yMax:12, xStep:0.5, yStep:1,
+          points:[
+            {x:0.5,y:3,textLabel:"בצל ירוק",dx:-28,dy:10},
+            {x:1.0,y:9,textLabel:"אבוקדו",dx:-10,dy:-12},
+            {x:1.5,y:9,textLabel:"אגס",dx:10,dy:-10},
+            {x:1.5,y:6,textLabel:"בטטה",dx:10,dy:10},
+            {x:3.0,y:11,textLabel:"אגוזים",dx:-10,dy:-12},
+            {x:3.5,y:10,textLabel:"אשכוליות",dx:10,dy:-10}
+          ]
+        },
+        subQuestions:[
+          {id:"q14_a",label:"א",prompt:"כמה ק״ג אשכוליות קנה אסף?",type:"number",unit:"ק״ג",expected:3.5,tolerance:0,hint:"אתרו את הנקודה המסומנת \"אשכוליות\" וקראו את ערך ה-X שלה.",explanation:"הנקודה של אשכוליות נמצאת מעל x = 3.5, ולכן אסף קנה 3.5 ק״ג אשכוליות."},
+          {id:"q14_b",label:"ב",prompt:"כמה עלה האבוקדו שקנה אסף?",type:"number",unit:"ש״ח",expected:9,tolerance:0,hint:"אתרו את הנקודה המסומנת \"אבוקדו\" וקראו את ערך ה-Y שלה.",explanation:"הנקודה של האבוקדו נמצאת בגובה y = 9, ולכן האבוקדו עלה 9 ש״ח."},
+          {id:"q14_c",label:"ג",prompt:"אסף קנה אותה כמות משני מוצרים. אילו הם?",type:"checkbox",options:[{value:"אגס",label:"אגס"},{value:"בטטה",label:"בטטה"},{value:"אבוקדו",label:"אבוקדו"},{value:"אשכוליות",label:"אשכוליות"},{value:"אגוזים",label:"אגוזים"},{value:"בצל ירוק",label:"בצל ירוק"}],expected:["אגס","בטטה"],hint:"חפשו שתי נקודות שנמצאות בדיוק מעל אותו ערך של ציר X.",explanation:"גם אגס וגם בטטה נמצאים מעל x = 1.5, ולכן אסף קנה מכל אחד מהם אותה כמות: 1.5 ק״ג."},
+          {id:"q14_d",label:"ד",prompt:"מה המחיר של ק״ג בטטה?",type:"number",unit:"ש״ח לק״ג",expected:4,tolerance:0.01,hint:"קראו את המשקל ואת המחיר של הבטטה, ואז חלקו מחיר במשקל.",explanation:"הבטטה שוקלת 1.5 ק״ג ומחירה הכולל 6 ש״ח. לכן המחיר לק״ג הוא 6 ÷ 1.5 = 4 ש״ח לק״ג."},
+          {id:"q14_e",label:"ה",prompt:"כמה כסף הוציא אסף בסך הכול?",type:"number",unit:"ש״ח",expected:48,tolerance:0,hint:"חברו את כל ערכי ה-Y של כל המוצרים.",explanation:"סך כל המחירים הוא 3 + 9 + 9 + 6 + 11 + 10 = 48 ש״ח."},
+          {id:"q14_f",label:"ו",prompt:"מהו המשקל הכולל שהיה עליו לסחוב?",type:"number",unit:"ק״ג",expected:11,tolerance:0,hint:"חברו את כל ערכי ה-X של כל המוצרים.",explanation:"המשקל הכולל הוא 0.5 + 1 + 1.5 + 1.5 + 3 + 3.5 = 11 ק״ג."},
+          {id:"q14_g",label:"ז",prompt:"איזה מוצר היה היקר ביותר (לק״ג)?",type:"radio",options:[{value:"אבוקדו",label:"אבוקדו"},{value:"אגס",label:"אגס"},{value:"בטטה",label:"בטטה"},{value:"אגוזים",label:"אגוזים"},{value:"אשכוליות",label:"אשכוליות"},{value:"בצל ירוק",label:"בצל ירוק"}],expected:"אבוקדו",hint:"חשבו עבור כל מוצר את היחס: מחיר ÷ משקל. המוצר עם היחס הגדול ביותר הוא היקר ביותר לק״ג.",explanation:"לאבוקדו יחס של 9 ÷ 1 = 9 ש״ח לק״ג — הגדול ביותר מבין כל המוצרים בגרף."}
+        ]
+      },
+      {
+        id:"q15_hair",
+        title:"אורך השיער של גל במהלך שנת 2004",
+        category:"גרף קטעים עם נקודות פתוחות וסגורות",
+        story:"לפניכם גרף המתאר את אורך השיער של גל במהלך שנת 2004. ידוע כי גל לא הסתפרה בתחילת השנה הזאת, ולא בסופה.",
+        graph:{
+          type:'segments', xLabel:"הזמן שחלף (בחודשים)", yLabel:"אורך השיער (בס״מ)",
+          xMin:0, xMax:12, xStep:1, yMin:0, yMax:10, yStep:1,
+          segments:[
+            [{x:0,y:5},{x:3,y:8}],
+            [{x:3,y:4},{x:4,y:5}],
+            [{x:4,y:0},{x:6,y:2}],
+            [{x:6,y:1},{x:10,y:5}],
+            [{x:10,y:3},{x:12,y:5}]
+          ],
+          openPoints:[{x:3,y:4},{x:4,y:0},{x:6,y:1},{x:10,y:3}],
+          closedPoints:[{x:3,y:8},{x:4,y:5},{x:6,y:2},{x:10,y:5},{x:12,y:5}]
+        },
+        subQuestions:[
+          {id:"q15_a",label:"א",prompt:"כמה פעמים הסתפרה גל במשך השנה?",type:"number",unit:"פעמים",expected:4,tolerance:0,hint:"כל הסתפרות מתבטאת בקפיצה כלפי מטה: סוף קטע אחד ותחילת הקטע הבא בנקודה פתוחה נמוכה יותר.",explanation:"בגרף מופיעות ארבע קפיצות כלפי מטה — בחודשים 3, 4, 6 ו-10 — ולכן גל הסתפרה 4 פעמים במשך השנה."},
+          {id:"q15_b",label:"ב",prompt:"מהו משך הזמן הארוך ביותר בשנה זו שבו גל לא הסתפרה?",type:"number",unit:"חודשים",expected:4,tolerance:0,hint:"חפשו את הקטע הארוך ביותר שבו הגרף רציף בלי קפיצה כלפי מטה.",explanation:"הקטע הארוך ביותר ללא הסתפרות הוא מן החודש 6 עד החודש 10. זהו פרק זמן של 4 חודשים."},
+          {id:"q15_c",label:"ג",prompt:"מהו אורך השיער המקסימלי שאליו הגיעה גל?",type:"number",unit:"ס״מ",expected:8,tolerance:0,hint:"חפשו את הנקודה הגבוהה ביותר בגרף.",explanation:"הנקודה הגבוהה ביותר בגרף היא בגובה 8 ס״מ, ולכן זהו אורך השיער המקסימלי שאליו הגיעה גל."},
+          {id:"q15_d",label:"ד",prompt:"בשנת 2005 לא הסתפרה גל במשך שלושת החודשים הראשונים. קצב גידול שערה נשאר כפי שהיה בשנת 2004. בכמה ס״מ התארך שערה במהלך שלושת החודשים?",type:"number",unit:"ס״מ",expected:3,tolerance:0,hint:"בגרף של שנת 2004 קצב הגידול הוא 1 ס״מ בחודש. כעת חשבו מה יקרה במשך 3 חודשים ללא תספורת.",explanation:"בשנת 2004 השיער מתארך בקצב של 1 ס״מ בכל חודש. לכן במשך 3 חודשים נוספים ללא תספורת, השיער יתארך ב-3 ס״מ."}
+        ]
+      },
+      {
+        id:"q16_pulse",
+        title:"דופק מומלץ בזמן אימון גופני לפי גיל",
+        category:"גרף תחום / אזור מטרה",
+        story:"בכל גיל נתון יש לבני אדם דופק מקסימלי. באימון גופני מומלץ שהדופק יהיה בין 65% לבין 80% מערכו המקסימלי. הקו העליון בגרף מתאר את הדופק המקסימלי, ושני הקווים האחרים מגדירים את \"אזור המטרה\".",
+        graph:{
+          type:'zone_band', xLabel:"גיל", yLabel:"דופק",
+          xMin:20, xMax:75, xStep:5, yMin:80, yMax:205, yStep:10,
+          maxPoints:[{x:20,y:200},{x:25,y:195},{x:30,y:190},{x:35,y:185},{x:40,y:180},{x:45,y:175},{x:50,y:170},{x:55,y:165},{x:60,y:160},{x:65,y:155},{x:70,y:150},{x:75,y:145}],
+          upperPoints:[{x:20,y:160},{x:25,y:156},{x:30,y:152},{x:35,y:148},{x:40,y:144},{x:45,y:140},{x:50,y:136},{x:55,y:132},{x:60,y:128},{x:65,y:124},{x:70,y:120},{x:75,y:116}],
+          lowerPoints:[{x:20,y:130},{x:25,y:126.75},{x:30,y:123.5},{x:35,y:120.25},{x:40,y:117},{x:45,y:113.75},{x:50,y:110.5},{x:55,y:107.25},{x:60,y:104},{x:65,y:100.75},{x:70,y:97.5},{x:75,y:94.25}]
+        },
+        subQuestions:[
+          {id:"q16_a",label:"א",prompt:"הדס בת 20. בעת האימון הדופק שלה עלה ל-175. האם דופק זה נמצא בטווח המומלץ בעבורה?",type:"radio",options:[{value:"yes",label:"כן"},{value:"no",label:"לא"}],expected:"no",hint:"לבת 20 הדופק המקסימלי הוא 200, ולכן אזור המטרה הוא בין 65% ל-80% מ-200.",explanation:"לא. לבת 20 אזור המטרה הוא בין 130 ל-160 פעימות לדקה. דופק של 175 גבוה מן הגבול העליון של האזור המומלץ."},
+          {id:"q16_b",label:"ב",prompt:"מהו טווח הדופק הרצוי לאימון גופני של הדס, אם היא בת 20?",type:"multi_input",fields:[{key:"low",label:"הגבול התחתון",expected:130,tolerance:0.5,unit:"פעימות לדקה"},{key:"high",label:"הגבול העליון",expected:160,tolerance:0.5,unit:"פעימות לדקה"}],hint:"חשבּו 65% ו-80% מתוך 200.",explanation:"לבת 20 הדופק המקסימלי הוא 200. לכן 65% ממנו הם 130 ו-80% ממנו הם 160. טווח הדופק הרצוי הוא 130–160 פעימות לדקה."},
+          {id:"q16_c",label:"ג",prompt:"רבקה בת 60. בעת אימון, הדופק שלה עלה ל-120. לאיזה אחוז מן הדופק המקסימלי שלה היא הגיעה, והאם זה בטווח הרצוי?",type:"choice_number",choices:[{value:"yes",label:"כן, זה בטווח הרצוי"},{value:"no",label:"לא, זה לא בטווח הרצוי"}],expectedChoice:"yes",expectedNumber:75,tolerance:1,unit:"%",hint:"לבת 60 הדופק המקסימלי הוא 160. חשבו את היחס 120 חלקי 160 באחוזים.",explanation:"הדופק המקסימלי של בת 60 הוא 160. לכן 120 הוא 75% מן המקסימום. מכיוון ש-75% נמצא בין 65% ל-80%, זה אכן בטווח הרצוי."},
+          {id:"q16_d",label:"ד",prompt:"תוצאות מדידת הדופק של שלושה אנשים בני 25, 65 ו-75 במהלך אימון גופני היו: 100, 120 ו-150. התאימו לכל גיל את הדופק, אם ידוע כי שלושת הערכים הם באזור המטרה.",type:"multi_input",fields:[{key:"age25",label:"בן 25",expected:150,tolerance:0.5,unit:"פעימות לדקה"},{key:"age65",label:"בן 65",expected:120,tolerance:0.5,unit:"פעימות לדקה"},{key:"age75",label:"בן 75",expected:100,tolerance:0.5,unit:"פעימות לדקה"}],hint:"השוו לכל גיל את תחום אזור המטרה. רק ערך שנמצא בתוך התחום יכול להתאים לאותו גיל.",explanation:"לבן 25 אזור המטרה הוא בקירוב 126.75–156, ולכן 150 מתאים לו. לבן 65 האזור הוא בקירוב 100.75–124, ולכן 120 מתאים לו. לבן 75 האזור הוא בקירוב 94.25–116, ולכן 100 מתאים לו."}
+        ]
       }
+
     ];
 
     // Response state dictionary
@@ -1131,8 +1227,8 @@
       if (chartInstance) chartInstance.destroy();
 
       graphReadPoint = null;
-      document.getElementById('chartTooltipIndicator').innerText = graphConfig.type === 'scatter'
-        ? 'הנקודות ממוספרות; אין מידע נסתר במעבר עכבר'
+      document.getElementById('chartTooltipIndicator').innerText = ['scatter','annotated_scatter'].includes(graphConfig.type)
+        ? 'הנקודות מסומנות ישירות על הגרף; אין מידע נסתר במעבר עכבר'
         : 'לחצו על הגרף כדי לקרוא ערכים';
 
       if (graphConfig.type === 'multi_line') {
@@ -1301,6 +1397,145 @@
               graphReadPoint={x:xVal,y:yVal,xLabel:`חודש ${xVal}`,yLabel:formatGraphTime(yVal,{timeFormatter:true})};
               document.getElementById('chartTooltipIndicator').innerText=`חודש ${xVal} • ${formatGraphTime(yVal,{timeFormatter:true})}`;
               chartInstance.draw();
+            }
+          }
+        });
+        return;
+      }
+
+      if (graphConfig.type === 'segments') {
+        document.getElementById('chartTooltipIndicator').innerText = 'לחצו על הגרף כדי לקרוא ערכים';
+        const lineDatasets = graphConfig.segments.map((seg, i) => ({
+          type:'line',
+          label:`מקטע ${i+1}`,
+          data:seg,
+          parsing:false,
+          borderColor:'#111827',
+          backgroundColor:'transparent',
+          borderWidth:2.5,
+          tension:0,
+          fill:false,
+          pointRadius:0,
+          pointHoverRadius:0,
+          pointHitRadius:0
+        }));
+        chartInstance = new Chart(ctx, {
+          type:'line',
+          plugins:[graphReadingPlugin],
+          data:{datasets:[
+            ...lineDatasets,
+            {type:'scatter',label:'נקודות סגורות',data:graphConfig.closedPoints,showLine:false,pointRadius:4.5,pointHoverRadius:4.5,pointBackgroundColor:'#111827',pointBorderColor:'#111827',pointBorderWidth:1},
+            {type:'scatter',label:'נקודות פתוחות',data:graphConfig.openPoints,showLine:false,pointRadius:5,pointHoverRadius:5,pointBackgroundColor:'#ffffff',pointBorderColor:'#111827',pointBorderWidth:2}
+          ]},
+          options:{
+            responsive:true,maintainAspectRatio:false,parsing:false,
+            plugins:{legend:{display:false},tooltip:{enabled:false},graphReadingPlugin:{enabled:true}},
+            scales:{
+              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.xStep||1,font:{family:'Rubik',size:11}},grid:{color:'#e2e8f0',lineWidth:1}},
+              y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.yStep||1,font:{family:'Rubik',size:11}},grid:{color:'#e2e8f0',lineWidth:1}}
+            },
+            onClick:(evt)=>{
+              let xVal=chartInstance.scales.x.getValueForPixel(evt.x);
+              let yVal=chartInstance.scales.y.getValueForPixel(evt.y);
+              xVal=Math.round(xVal); yVal=Math.round(yVal);
+              xVal=Math.max(graphConfig.xMin,Math.min(graphConfig.xMax,xVal));
+              yVal=Math.max(graphConfig.yMin,Math.min(graphConfig.yMax,yVal));
+              graphReadPoint={x:xVal,y:yVal,xLabel:String(xVal),yLabel:String(yVal)};
+              document.getElementById('chartTooltipIndicator').innerText=`${xVal}, ${yVal}`;
+              chartInstance.draw();
+            }
+          }
+        });
+        return;
+      }
+
+      if (graphConfig.type === 'zone_band') {
+        document.getElementById('chartTooltipIndicator').innerText = 'לחצו על הגרף כדי לקרוא גיל ודופק';
+        const zoneLabelPlugin = {
+          id:'zoneLabelPlugin',
+          afterDraw(chart){
+            const {ctx, scales} = chart;
+            ctx.save();
+            ctx.fillStyle = '#334155';
+            ctx.font = '700 11px Rubik, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            const xm = scales.x.getPixelForValue(48);
+            ctx.fillText('דופק מקסימלי', scales.x.getPixelForValue(52), scales.y.getPixelForValue(167));
+            ctx.fillText('80% מהמקסימום', scales.x.getPixelForValue(36), scales.y.getPixelForValue(145));
+            ctx.fillText('65% מהמקסימום', scales.x.getPixelForValue(34), scales.y.getPixelForValue(112));
+            ctx.fillStyle = 'rgba(30,41,59,.85)';
+            ctx.fillText('אזור המטרה', xm-10, scales.y.getPixelForValue(128));
+            ctx.restore();
+          }
+        };
+        chartInstance = new Chart(ctx, {
+          type:'line',
+          plugins:[graphReadingPlugin, zoneLabelPlugin],
+          data:{datasets:[
+            {label:'דופק מקסימלי',data:graphConfig.maxPoints,borderColor:'#111827',backgroundColor:'transparent',borderWidth:2.2,tension:0,fill:false,pointRadius:0},
+            {label:'80% מהמקסימום',data:graphConfig.upperPoints,borderColor:'#475569',backgroundColor:'transparent',borderWidth:2,tension:0,fill:false,pointRadius:0},
+            {label:'65% מהמקסימום',data:graphConfig.lowerPoints,borderColor:'#475569',backgroundColor:'rgba(125,211,252,.35)',borderWidth:2,tension:0,fill:'-1',pointRadius:0}
+          ]},
+          options:{
+            responsive:true,maintainAspectRatio:false,parsing:false,
+            plugins:{legend:{display:false},tooltip:{enabled:false},graphReadingPlugin:{enabled:true}},
+            scales:{
+              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.xStep||5,font:{family:'Rubik',size:11}},grid:{color:'#e2e8f0',lineWidth:1}},
+              y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.yStep||10,font:{family:'Rubik',size:11}},grid:{color:'#e2e8f0',lineWidth:1}}
+            },
+            onClick:(evt)=>{
+              let xVal=chartInstance.scales.x.getValueForPixel(evt.x);
+              let yVal=chartInstance.scales.y.getValueForPixel(evt.y);
+              xVal=Math.round(xVal); yVal=Math.round(yVal);
+              xVal=Math.max(graphConfig.xMin,Math.min(graphConfig.xMax,xVal));
+              yVal=Math.max(graphConfig.yMin,Math.min(graphConfig.yMax,yVal));
+              graphReadPoint={x:xVal,y:yVal,xLabel:`גיל ${xVal}`,yLabel:`${yVal}`};
+              document.getElementById('chartTooltipIndicator').innerText=`גיל ${xVal} • דופק ${yVal}`;
+              chartInstance.draw();
+            }
+          }
+        });
+        return;
+      }
+
+      if (graphConfig.type === 'annotated_scatter') {
+        const labelPlugin = {
+          id:'annotatedScatterLabels',
+          afterDatasetsDraw(chart){
+            const chartCtx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            chartCtx.save();
+            chartCtx.font = '700 12px Rubik, sans-serif';
+            chartCtx.fillStyle = '#1f2937';
+            chartCtx.textAlign = 'left';
+            chartCtx.textBaseline = 'middle';
+            meta.data.forEach((element, index) => {
+              const p = graphConfig.points[index];
+              const dx = p.dx ?? 8, dy = p.dy ?? -10;
+              chartCtx.beginPath();
+              chartCtx.arc(element.x, element.y, 4.5, 0, Math.PI*2);
+              chartCtx.fillStyle = '#dbeafe';
+              chartCtx.fill();
+              chartCtx.strokeStyle = '#334155';
+              chartCtx.lineWidth = 1.3;
+              chartCtx.stroke();
+              chartCtx.fillStyle = '#1f2937';
+              chartCtx.fillText(p.textLabel || p.label || '', element.x + dx, element.y + dy);
+            });
+            chartCtx.restore();
+          }
+        };
+        chartInstance = new Chart(ctx, {
+          type:'scatter',
+          plugins:[labelPlugin],
+          data:{datasets:[{label:'מוצרים',data:graphConfig.points,backgroundColor:'rgba(0,0,0,0)',borderColor:'rgba(0,0,0,0)',pointRadius:0,pointHoverRadius:0}]},
+          options:{
+            responsive:true,maintainAspectRatio:false,parsing:false,
+            plugins:{legend:{display:false},tooltip:{enabled:false}},
+            scales:{
+              x:{min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.xStep||0.5,font:{family:'Rubik',size:11}},grid:{color:'#e2e8f0',lineWidth:1}},
+              y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.yStep||1,font:{family:'Rubik',size:11}},grid:{color:'#e2e8f0',lineWidth:1}}
             }
           }
         });
