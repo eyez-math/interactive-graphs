@@ -7,6 +7,7 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,15 +61,86 @@
     }
     @media (max-width: 640px) {
       body { overflow-x:hidden; }
+      header .max-w-7xl { min-width:0; }
+      #questionSelect { min-width:0; }
+      #prevQuestionBtn, #nextQuestionBtn { flex:0 0 auto; padding-left:.65rem; padding-right:.65rem; }
       #questionSolutionModal { border-radius:20px; }
       #solutionStepsList > div { min-width:0; overflow-wrap:anywhere; }
       #subQuestionsContainer input,
       #subQuestionsContainer select { max-width:100%; }
       #chartTooltipIndicator { max-width:55%; text-align:center; line-height:1.25; }
     }
+
+    /* מצב בדיקה של שאלה שלמה */
+    #subQuestionsContainer button[onclick^="checkSubQuestion"] { display:none !important; }
+    .question-locked input, .question-locked select, .question-locked button.answer-control {
+      pointer-events:none; opacity:.78;
+    }
+    .question-locked input, .question-locked select { background:#f8fafc; }
+    #studentGate { backdrop-filter: blur(3px); }
+    .certificate-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    .certificate-table th, .certificate-table td { border-bottom:1px solid #e2e8f0; padding:7px 5px; text-align:right; vertical-align:top; overflow-wrap:anywhere; }
+    .certificate-table th { color:#475569; font-size:.68rem; }
+    .certificate-table td { font-size:.72rem; line-height:1.35; }
+    .certificate-table th:nth-child(1), .certificate-table td:nth-child(1){ width:14%; text-align:center; }
+    .certificate-table th:nth-child(2), .certificate-table td:nth-child(2){ width:58%; }
+    .certificate-table th:nth-child(3), .certificate-table td:nth-child(3){ width:28%; text-align:center; }
+
+    /* התעודה מעוצבת תמיד כרוחב סמארטפון, גם במחשב וגם בקובץ ההורדה */
+    #questionCertificatePanel{
+      max-width:430px;
+      margin-inline:auto;
+      padding:12px;
+    }
+    #questionCertificate{
+      width:390px;
+      max-width:100%;
+      margin-inline:auto;
+      padding:14px !important;
+      border-radius:18px;
+    }
+    #questionCertificate .cert-personal-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:6px;
+      font-size:.78rem;
+      margin-bottom:12px;
+    }
+    #questionCertificate .cert-score-box{
+      gap:12px;
+      padding:10px;
+      margin-bottom:12px;
+    }
+    #questionCertificate .cert-score-box .text-xl{ font-size:1.15rem; line-height:1.3; }
+    #questionCertificate h3{ font-size:1.2rem; line-height:1.25; }
+    #questionCertificate #certQuestionTitle{ font-size:.78rem; line-height:1.35; }
+    #questionCertificate #certDate{ font-size:.66rem; }
+    @media (max-width:430px){
+      #questionCertificatePanel{ max-width:100%; padding:8px; border-radius:20px; }
+      #questionCertificate{ width:100%; padding:12px !important; }
+    }
+
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+  <div id="studentGate" class="fixed inset-0 z-[100] bg-slate-900/30 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 p-5 sm:p-7">
+      <h2 class="text-xl sm:text-2xl font-black text-slate-900 mb-2">גרפים כיתה י׳- 3 יחידות</h2>
+      <p class="text-sm text-slate-600 mb-5">לפני שמתחילים, מלאו שם, בחרו כיתה והקלידו את שם המורה. הפרטים יופיעו באישור הסיום של כל שאלה.</p>
+      <div class="space-y-4">
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">שם מלא</label><input id="studentNameInput" type="text" autocomplete="name" placeholder="שם מלא" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="block text-sm font-bold text-slate-700 mb-1">כיתה</label><select id="studentClassInput" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm"><option value="">בחרו כיתה</option><option>י׳1</option><option>י׳2</option><option>י׳3</option><option>י׳4</option><option>י׳5</option><option>י׳6</option><option>י׳7</option><option>י׳8</option><option>י׳9</option><option>י׳10</option><option>י׳11</option></select></div>
+          <div><label class="block text-sm font-bold text-slate-700 mb-1">שם המורה</label><input id="studentTeacherInput" type="text" autocomplete="name" placeholder="הקלידו שם מורה" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm"></div>
+        </div>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-2 justify-end">
+        <button id="studentStartBtn" type="button" disabled class="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed">בואו נתחיל</button>
+      </div>
+    </div>
+  </div>
+
 
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -79,15 +151,15 @@
           📐
         </div>
         <div>
-          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">מעבדת חקירת גרפים ופונקציות</h1>
-          <p class="text-xs text-slate-500">שאלות ממאגר בחינות הבגרות עם בדיקה אוטומטית</p>
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">גרפים כיתה י׳- 3 יחידות</h1>
+          
         </div>
       </div>
 
       <!-- Global score & progress counters -->
       <div class="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-2xl w-full sm:w-auto">
         <div class="text-right">
-          <div class="text-xs text-slate-500">סעיפים שהושלמו</div>
+          <div class="text-xs text-slate-500">שאלות שנבדקו</div>
           <div class="text-sm font-bold text-slate-800">
             <span id="globalSolvedCount" class="text-blue-600">0</span> / <span id="globalTotalCount">0</span>
           </div>
@@ -96,15 +168,9 @@
         <div class="h-7 w-px bg-slate-200"></div>
 
         <div class="text-right">
-          <div class="text-xs text-slate-500">ציון כולל</div>
+          <div class="text-xs text-slate-500">ציון בשאלה</div>
           <div id="globalScorePct" class="text-sm font-extrabold text-emerald-600">0%</div>
         </div>
-
-        <div class="h-7 w-px bg-slate-200"></div>
-
-        <button onclick="resetCurrentQuestion()" class="text-xs bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 font-semibold px-2.5 py-1.5 rounded-xl transition">
-          איפוס שאלה
-        </button>
       </div>
 
     </div>
@@ -114,16 +180,17 @@
       <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         
         <button id="prevQuestionBtn" onclick="navigateQuestion(-1)" class="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed">
-          <span>➔</span> שאלה קודמת
+          <span>➔</span><span class="hidden sm:inline">שאלה קודמת</span><span class="sm:hidden">קודמת</span>
         </button>
 
-        <!-- Dynamic pill stepper -->
-        <div id="questionsNavPills" class="flex items-center gap-2 overflow-x-auto py-1 custom-scrollbar">
-          <!-- Populated by JavaScript -->
+        <div class="flex-1 max-w-sm mx-1 sm:mx-4">
+          <label for="questionSelect" class="sr-only">בחירת שאלה</label>
+          <select id="questionSelect" onchange="loadQuestion(Number(this.value))" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </select>
         </div>
 
         <button id="nextQuestionBtn" onclick="navigateQuestion(1)" class="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed">
-          שאלה הבאה <span>←</span>
+          <span class="hidden sm:inline">שאלה הבאה</span><span class="sm:hidden">הבאה</span> <span>←</span>
         </button>
 
       </div>
@@ -158,7 +225,7 @@
             <span>💡</span> הצג/הסתר רמזים
           </button>
           <button id="fullSolutionBtn" onclick="toggleCurrentSolution()" class="w-full sm:w-auto text-xs sm:text-sm font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-indigo-50" disabled>
-            <span>🔒</span><span id="fullSolutionBtnText">פתרון מלא – לאחר בדיקת כל הסעיפים</span>
+            <span>🔒</span><span id="fullSolutionBtnText">פתרון מלא – לאחר בדיקת השאלה</span>
           </button>
         </div>
       </div>
@@ -198,6 +265,51 @@
       </div>
 
     </div>
+
+    <section id="questionCheckPanel" class="mt-6 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-sm">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="font-black text-slate-900">סיימתם את כל הסעיפים?</h3>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">לחצו פעם אחת לבדיקה. לאחר הבדיקה התשובות יינעלו ולא יהיה ניתן לשנות אותן.</p>
+        </div>
+        <button id="checkQuestionBtn" onclick="checkCurrentQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0">בדיקת השאלה</button>
+      </div>
+      <div id="questionCheckMessage" class="hidden mt-3 rounded-xl p-3 text-sm"></div>
+      <div id="questionResultActions" class="hidden mt-4 flex flex-col sm:flex-row gap-2 justify-end">
+        <button type="button" onclick="scrollToQuestionCertificate()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl">צפייה באישור והורדה</button>
+        <button type="button" onclick="downloadQuestionCertificate()" class="bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold px-5 py-2.5 rounded-xl">הורד אישור כתמונה</button>
+      </div>
+    </section>
+
+    <section id="questionCertificatePanel" class="hidden mt-6 bg-white border-2 border-emerald-100 rounded-3xl p-4 sm:p-6 shadow-sm">
+      <div id="questionCertificate" class="bg-white p-2 sm:p-4 rounded-2xl">
+        <div class="text-center border-b border-slate-200 pb-4 mb-4">
+          <div class="text-xs font-bold text-blue-700">גרפים כיתה י׳- 3 יחידות</div>
+          <h3 class="text-xl font-black text-slate-900 mt-1">אישור ביצוע שאלה</h3>
+          <div id="certQuestionTitle" class="text-sm font-bold text-slate-600 mt-1"></div>
+        </div>
+        <div class="cert-personal-grid">
+          <div><span class="text-slate-500">תלמיד/ה:</span> <strong id="certStudentName"></strong></div>
+          <div><span class="text-slate-500">כיתה:</span> <strong id="certClassName"></strong></div>
+          <div><span class="text-slate-500">מורה:</span> <strong id="certTeacherName"></strong></div>
+        </div>
+        <div class="cert-score-box flex items-center justify-center bg-emerald-50 border border-emerald-100 rounded-2xl">
+          <div class="text-center"><div class="text-xs text-emerald-700">תשובות נכונות</div><div id="certCorrect" class="text-xl font-black text-emerald-800"></div></div>
+          <div class="h-9 w-px bg-emerald-200"></div>
+          <div class="text-center"><div class="text-xs text-emerald-700">ציון</div><div id="certScore" class="text-xl font-black text-emerald-800"></div></div>
+        </div>
+        <div>
+          <table class="certificate-table">
+            <thead><tr><th>סעיף</th><th>תשובת התלמיד</th><th>תוצאה</th></tr></thead>
+            <tbody id="certAnswersBody"></tbody>
+          </table>
+        </div>
+        <div id="certDate" class="text-xs text-slate-400 mt-4 text-left" dir="ltr"></div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2 justify-center">
+        <button onclick="downloadQuestionCertificate()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl">הורד אישור כתמונה</button>
+      </div>
+    </section>
 
     <section id="questionSolutionModal" class="hidden mt-8 bg-white border-2 border-indigo-100 rounded-3xl p-4 sm:p-6 shadow-md transition-all">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -805,11 +917,58 @@
           {id:"q10_e",label:"ה",prompt:"כמה מים הוזרמו למכל בין הדקה 10 לדקה 12?",type:"number",unit:"ליטר",expected:60,tolerance:0,hint:"קראו את הכמות בדקה 10 ובדקה 12 ומצאו את ההפרש.",explanation:"בקטע הזה הכמות גדלה בקצב של 30 ליטר לדקה. במשך 2 דקות נוספו 30 × 2 = 60 ליטר."},
           {id:"q10_f",label:"ו",prompt:"באילו זמנים לא היה שינוי בכמות המים במכל? הוסיפו תקופה נוספת בכל פעם שאתם מוצאים קטע אופקי נוסף.",type:"multi_ranges",unit:"דקות",step:1,expected:[[4,8],[14,16],[26,30]],tolerance:0,hint:"חפשו את כל הקטעים האופקיים בגרף.",explanation:"לא היה שינוי בכמות המים בין הדקות 4–8, 14–16 ו-26–30."}
         ]
+      },
+      {
+        id:"q11_swimmers",
+        title:"שחייה בבריכה – מרחק וזמן",
+        category:"שני גרפי מרחק–זמן",
+        story:"אבי ובני שוחים בבריכה שאורכה 30 מטר. הם שוחים מתחילת הבריכה אל הקצה שמולם, נחים מעט בקצה, משנים כיוון וחוזרים לנקודת ההתחלה. אבי שוחה מהר יותר מבני. שניהם התחילו לשחות באותו זמן, וכל אחד שחה הלוך וחזור פעם אחת.",
+        graph:{
+          type:'multi_line',xLabel:"הזמן בשניות",yLabel:"המרחק מתחילת הבריכה במטרים",
+          xMin:0,xMax:100,xStep:10,yMin:0,yMax:40,yStep:10,readStep:1,
+          datasets:[
+            {label:"גרף 1",color:"#111827",points:[{x:0,y:0},{x:20,y:30},{x:30,y:30},{x:50,y:0}]},
+            {label:"גרף 2",color:"#475569",points:[{x:0,y:0},{x:40,y:30},{x:60,y:30},{x:100,y:0}]}
+          ]
+        },
+        subQuestions:[
+          {id:"q11_a",label:"א",prompt:"התאימו את הגרף המתאים לכל שחיין.",type:"relative_pair",fields:[
+            {key:"avi",label:"אבי",expected:"g1",options:[{value:"",label:"בחרו גרף"},{value:"g1",label:"גרף 1"},{value:"g2",label:"גרף 2"}]},
+            {key:"beni",label:"בני",expected:"g2",options:[{value:"",label:"בחרו גרף"},{value:"g1",label:"גרף 1"},{value:"g2",label:"גרף 2"}]}
+          ],hint:"אבי שוחה מהר יותר. בגרף מרחק–זמן מהירות גדולה יותר מתבטאת בשיפוע תלול יותר ובזמן קצר יותר להגיע לקצה הבריכה.",explanation:"גרף 1 מתאים לאבי: הוא מגיע לקצה הבריכה לאחר 20 שניות וחוזר לנקודת ההתחלה לאחר 50 שניות. גרף 2 מתאים לבני, שזקוק לזמן רב יותר."},
+          {id:"q11_b",label:"ב",prompt:"כמה זמן נח כל שחיין בקצה הבריכה?",type:"multi_input",fields:[{key:"avi",label:"אבי",expected:10,tolerance:0,unit:"שניות"},{key:"beni",label:"בני",expected:20,tolerance:0,unit:"שניות"}],hint:"המנוחה בקצה הבריכה מתוארת בקטע אופקי בגובה 30 מטר.",explanation:"אבי נח בין השנייה 20 לשנייה 30, כלומר 10 שניות. בני נח בין השנייה 40 לשנייה 60, כלומר 20 שניות."},
+          {id:"q11_c",label:"ג",prompt:"כעבור כמה זמן, בערך, מתחילת השחייה נפגשו השחיינים?",type:"number",unit:"שניות",expected:33.3,tolerance:1,hint:"חפשו את נקודת החיתוך של שני הגרפים, מלבד נקודת ההתחלה.",explanation:"נקודת החיתוך נמצאת בערך בשנייה 33. לכן השחיינים נפגשו כעבור כ-33 שניות מתחילת השחייה."},
+          {id:"q11_d",label:"ד",prompt:"בנקודת הפגישה, האם השחיינים שחו באותו כיוון או בכיוונים מנוגדים?",type:"radio",options:[{value:"same",label:"באותו כיוון"},{value:"opposite",label:"בכיוונים מנוגדים"}],expected:"opposite",hint:"בדקו אם כל גרף עולה או יורד בנקודת החיתוך.",explanation:"בנקודת הפגישה גרף 1 יורד — אבי חוזר לכיוון נקודת ההתחלה — ואילו גרף 2 עדיין עולה — בני שוחה לכיוון הקצה. לכן הם שוחים בכיוונים מנוגדים."},
+          {id:"q11_e",label:"ה",prompt:"בכמה שניות סיים אבי את שחייתו לפני בני?",type:"number",unit:"שניות",expected:50,tolerance:0,hint:"קראו מתי כל אחד מן הגרפים חוזר למרחק 0 וחסרו את הזמנים.",explanation:"אבי מסיים לאחר 50 שניות ובני לאחר 100 שניות. לכן אבי סיים 100 − 50 = 50 שניות לפני בני."}
+        ]
+      },
+      {
+        id:"q12_soil_temperature",
+        title:"טמפרטורת האדמה בשני עומקים",
+        category:"שני גרפים מחזוריים / טמפרטורה–זמן",
+        story:"הגרפים מתארים את טמפרטורת האדמה בשני ימי קיץ בירושלים, בעומק 1.5 ס״מ ובעומק 8 ס״מ מתחת לפני הקרקע.",
+        graph:{
+          type:'multi_line',xLabel:"שעה",yLabel:"טמפרטורה במעלות צלזיוס",xMin:18,xMax:66,xStep:6,yMin:10,yMax:60,yStep:10,readStep:1,timeFormatter:true,tension:0.35,
+          customTicksX:[{val:18,label:"6 ערב"},{val:24,label:"12 חצות"},{val:30,label:"6 בוקר"},{val:36,label:"12 צהריים"},{val:42,label:"6 ערב"},{val:48,label:"12 חצות"},{val:54,label:"6 בוקר"},{val:60,label:"12 צהריים"},{val:66,label:"6 ערב"}],
+          datasets:[
+            {label:"עומק 1.5 ס״מ",color:"#111827",tension:0.38,points:[{x:18,y:25},{x:24,y:18},{x:30,y:15},{x:33,y:18},{x:34,y:23},{x:35,y:42},{x:36,y:55},{x:37,y:51},{x:39,y:36},{x:42,y:25},{x:48,y:18},{x:54,y:15},{x:57,y:18},{x:58,y:24},{x:59,y:43},{x:60,y:55},{x:61,y:51},{x:63,y:36},{x:66,y:25}]},
+            {label:"עומק 8 ס״מ",color:"#64748b",tension:0.35,points:[{x:18,y:30},{x:24,y:25},{x:30,y:20},{x:34,y:20},{x:36,y:23},{x:40,y:30},{x:42,y:28},{x:48,y:22},{x:54,y:20},{x:58,y:20},{x:60,y:23},{x:64,y:30},{x:66,y:27}]}
+          ]
+        },
+        subQuestions:[
+          {id:"q12_a",label:"א",prompt:"מהו, בערך, ההפרש בין הטמפרטורה המקסימלית והטמפרטורה המינימלית בעומק 1.5 ס״מ?",type:"number",unit:"°C",expected:40,tolerance:2,hint:"קראו את הערך הגבוה ביותר ואת הערך הנמוך ביותר של הגרף בעומק 1.5 ס״מ וחסרו ביניהם.",explanation:"בעומק 1.5 ס״מ הטמפרטורה המקסימלית היא בערך 55°C והמינימלית בערך 15°C. לכן ההפרש הוא בערך 55 − 15 = 40°C."},
+          {id:"q12_b",label:"ב",prompt:"האם הטמפרטורה בעומק 1.5 ס״מ גבוהה יותר מהטמפרטורה בעומק 8 ס״מ בין 6 בערב לבין 6 בבוקר?",type:"radio",options:[{value:"yes",label:"כן"},{value:"no",label:"לא"}],expected:"no",hint:"השוו את מיקום שני הגרפים לאורך כל הקטע שבין 6 בערב ל-6 בבוקר.",explanation:"לא. במשך הלילה הגרף של עומק 1.5 ס״מ נמצא מתחת לגרף של עומק 8 ס״מ, ולכן הטמפרטורה סמוך לפני הקרקע נמוכה יותר בתקופה זו."},
+          {id:"q12_c",label:"ג",prompt:"באילו מן השעות הבאות ההפרש בין הטמפרטורות בשני העומקים היה גדול מ-20°C?",type:"checkbox",options:[{value:"7",label:"7 בבוקר"},{value:"12",label:"12 בצהריים"},{value:"15",label:"3 אחר הצהריים"}],expected:["12"],hint:"לכל שעה קראו את שתי הטמפרטורות והשוו את ההפרש ביניהן.",explanation:"בסביבות 12 בצהריים הטמפרטורה בעומק 1.5 ס״מ קרובה ל-55°C, בעוד שבעומק 8 ס״מ היא בערך 23°C, ולכן ההפרש גדול מ-20°C. בשעות 7 בבוקר ו-3 אחר הצהריים ההפרש קטן יותר."},
+          {id:"q12_d",label:"ד",prompt:"האם ישנן שעות במשך היום שבהן הטמפרטורה בעומק 1.5 ס״מ שווה לטמפרטורה בעומק 8 ס״מ? אם כן, הוסיפו את כל השעות המתאימות בקירוב.",type:"multi_time",timeMin:0,timeMax:23,timeStep:1,expected:["10","18"],hint:"חפשו את נקודות החיתוך של שני הגרפים במהלך יום אחד.",explanation:"כן. הגרפים נחתכים בקירוב סביב 10:00 בבוקר ושוב סביב 18:00 בערב. אלה השעות שבהן הטמפרטורות בשני העומקים שוות בקירוב."}
+        ]
       }
     ];
 
     // Response state dictionary
     const studentResponses = {};
+    const questionStatus = {};
+    const studentInfo = { name:'', className:'', teacherName:'' };
+    const SUBMISSION_URL = 'https://script.google.com/macros/s/AKfycbzj0KLoYZuK2JRxCctqoYfYLDwzDnTlIm1970ihKFxcdsgW8yOITX483dCScldUpLSg/exec';
     let currentQuestionIndex = 0;
     let chartInstance = null;
     let graphReadPoint = null;
@@ -820,12 +979,7 @@
      * Initializes the entire application
      */
     function initApp() {
-      // Calculate total sub-questions
-      let totalSubs = 0;
-      questionsDatabase.forEach(q => {
-        totalSubs += q.subQuestions.length;
-      });
-      document.getElementById('globalTotalCount').innerText = totalSubs;
+      document.getElementById('globalTotalCount').innerText = questionsDatabase.length;
 
       renderNavPills();
       loadQuestion(0);
@@ -835,34 +989,20 @@
      * Renders question navigation stepper tabs
      */
     function renderNavPills() {
-      const container = document.getElementById('questionsNavPills');
-      container.innerHTML = '';
-
-      questionsDatabase.forEach((q, idx) => {
-        const isCurrent = idx === currentQuestionIndex;
-        
-        // Calculate solved count for this question
-        const total = q.subQuestions.length;
-        const solved = q.subQuestions.filter(sq => studentResponses[`${q.id}_${sq.id}`]?.isCorrect).length;
-        const isFullySolved = solved === total && total > 0;
-
-        const pill = document.createElement('button');
-        pill.onclick = () => loadQuestion(idx);
-        pill.className = `flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-          isCurrent 
-            ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300'
-            : isFullySolved
-              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-              : 'bg-white text-slate-700 hover:bg-slate-200/70 border border-slate-200'
-        }`;
-
-        pill.innerHTML = `
-          <span>שאלה ${idx + 1}</span>
-          ${isFullySolved ? '<span class="text-emerald-500 font-black">✓</span>' : `<span class="opacity-60 text-[10px]">(${solved}/${total})</span>`}
-        `;
-        container.appendChild(pill);
-      });
-
+      const select = document.getElementById('questionSelect');
+      if (select) {
+        select.innerHTML = '';
+        questionsDatabase.forEach((q, idx) => {
+          const total = q.subQuestions.length;
+          const answered = q.subQuestions.filter(sq => studentResponses[`${q.id}_${sq.id}`]?.answered).length;
+          const option = document.createElement('option');
+          option.value = idx;
+          const st=questionStatus[q.id];
+          option.textContent = st?.locked ? `שאלה ${idx + 1} מתוך ${questionsDatabase.length} · ${st.score}%` : `שאלה ${idx + 1} מתוך ${questionsDatabase.length}`;
+          option.selected = idx === currentQuestionIndex;
+          select.appendChild(option);
+        });
+      }
       document.getElementById('prevQuestionBtn').disabled = currentQuestionIndex === 0;
       document.getElementById('nextQuestionBtn').disabled = currentQuestionIndex === questionsDatabase.length - 1;
     }
@@ -906,9 +1046,11 @@
 
       // Hide solution modal upon loading question
       document.getElementById('questionSolutionModal').classList.add('hidden');
+      renderQuestionCompletionState(q);
 
       renderNavPills();
       updateGlobalScore();
+      updateSolutionAccess();
       updateSolutionAccess();
     }
 
@@ -995,14 +1137,14 @@
 
       if (graphConfig.type === 'multi_line') {
         const datasets=graphConfig.datasets.map((ds,i)=>({
-          label:ds.label,data:ds.points,borderColor:ds.color||['#111827','#475569','#2563eb'][i%3],backgroundColor:'transparent',borderWidth:3,tension:0,fill:false,pointRadius:0,pointHoverRadius:0,pointHitRadius:0
+          label:ds.label,data:ds.points,borderColor:ds.color||['#111827','#475569','#2563eb'][i%3],backgroundColor:'transparent',borderWidth:3,tension:(ds.tension ?? graphConfig.tension ?? 0),fill:false,pointRadius:0,pointHoverRadius:0,pointHitRadius:0
         }));
         chartInstance=new Chart(ctx,{
           type:'line',plugins:[graphReadingPlugin],data:{datasets},
           options:{responsive:true,maintainAspectRatio:false,parsing:false,
             plugins:{legend:{display:true,position:'top',labels:{font:{family:'Rubik',size:12,weight:'bold'},usePointStyle:true}},tooltip:{enabled:false},graphReadingPlugin:{enabled:true}},
             scales:{
-              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.xStep||1,font:{family:'Rubik',size:11},callback:(v)=>graphConfig.timeFormatter?formatGraphTime(v,{timeFormatter:true}):v},grid:{color:'#cbd5e1',lineWidth:1}},
+              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.xStep||1,font:{family:'Rubik',size:11},callback:(v)=>{ if(graphConfig.customTicksX){const m=graphConfig.customTicksX.find(t=>Math.abs(t.val-v)<0.001); return m?m.label:'';} return graphConfig.timeFormatter?formatGraphTime(v,{timeFormatter:true}):v; }},grid:{color:'#cbd5e1',lineWidth:1}},
               y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.yStep,font:{family:'Rubik',size:10}},grid:{color:'#cbd5e1',lineWidth:1}}
             },
             onClick:(evt)=>{
@@ -1013,7 +1155,7 @@
               if(!candidates.length)return;
               candidates.sort((a,b)=>Math.abs(a.y-clickedY)-Math.abs(b.y-clickedY));
               const c=candidates[0];
-              graphReadPoint={x:xVal,y:c.y,xLabel:graphConfig.timeFormatter?formatGraphTime(xVal,{timeFormatter:true}):Number(xVal.toFixed(2)).toString()};
+              graphReadPoint={x:xVal,y:c.y,xLabel:(graphConfig.timeFormatter||graphConfig.customTicksX)?formatGraphTime(xVal,{timeFormatter:true,customTicksX:graphConfig.customTicksX}):Number(xVal.toFixed(2)).toString()};
               document.getElementById('chartTooltipIndicator').innerText=`${c.ds.label}: ${graphReadPoint.xLabel} | ${Number(c.y.toFixed(2))}`;
               chartInstance.draw();
             }
@@ -1587,6 +1729,7 @@
       const q = questionsDatabase.find(item => item.id === questionId);
       const sq = q.subQuestions.find(item => item.id === subId);
       const key = `${questionId}_${subId}`;
+      if (questionStatus[questionId]?.locked) return;
 
       let isCorrect = false;
       let userVal = null;
@@ -1758,6 +1901,177 @@
       updateSolutionAccess();
     }
 
+
+    function allSubQuestionsAnswered(question) {
+      return question.subQuestions.every(sq => studentResponses[`${question.id}_${sq.id}`]?.answered === true);
+    }
+
+    function clearTransientFeedback(question) {
+      question.subQuestions.forEach(sq => {
+        const key=`${question.id}_${sq.id}`;
+        const fb=document.getElementById(`feedback-${key}`);
+        if (fb && !studentResponses[key]) fb.classList.add('hidden');
+      });
+    }
+
+    function checkCurrentQuestion() {
+      const q=questionsDatabase[currentQuestionIndex];
+      if (questionStatus[q.id]?.locked) return;
+      clearTransientFeedback(q);
+
+      // כל הסעיפים נבדקים יחד. אין משוב של נכון/לא נכון לפני הלחיצה הזאת.
+      q.subQuestions.forEach(sq => checkSubQuestion(q.id, sq.id));
+
+      const msg=document.getElementById('questionCheckMessage');
+      if (!allSubQuestionsAnswered(q)) {
+        msg.className='mt-3 rounded-xl p-3 text-sm bg-amber-50 border border-amber-200 text-amber-900';
+        msg.textContent='יש סעיפים שלא מולאו. השלימו את כל הסעיפים ורק אז בדקו את השאלה.';
+        msg.classList.remove('hidden');
+        return;
+      }
+
+      const correct=q.subQuestions.filter(sq=>studentResponses[`${q.id}_${sq.id}`]?.isCorrect).length;
+      const total=q.subQuestions.length;
+      const score=Math.round(correct/total*100);
+      questionStatus[q.id]={locked:true,correct,total,score};
+      lockCurrentQuestionUI();
+      // מציגים קודם את אזור הפעולות והאישור, כדי שכשל בתצוגה לא יעלים את כפתורי ההורדה.
+      document.getElementById('questionResultActions').classList.remove('hidden');
+      document.getElementById('questionCertificatePanel').classList.remove('hidden');
+      try {
+        renderQuestionCertificate(q);
+      } catch (err) {
+        console.error('Certificate render failed:', err);
+      }
+      msg.className='mt-3 rounded-xl p-3 text-sm bg-emerald-50 border border-emerald-200 text-emerald-900';
+      msg.textContent=`השאלה נבדקה וננעלה. הציון בשאלה: ${score}%. כעת ניתן לצפות בפתרון המלא ולהוריד אישור.`;
+      msg.classList.remove('hidden');
+      updateSolutionAccess();
+      updateGlobalScore();
+      renderNavPills();
+      setTimeout(()=>scrollToQuestionCertificate(), 120);
+    }
+
+    function lockCurrentQuestionUI() {
+      const wrap=document.getElementById('subQuestionsContainer');
+      wrap.classList.add('question-locked');
+      wrap.querySelectorAll('input,select,textarea,button').forEach(el=>{
+        if (el.getAttribute('onclick')?.startsWith('toggleHint')) return; // הרמזים יכולים להישאר פתיחים
+        el.disabled=true;
+      });
+      const btn=document.getElementById('checkQuestionBtn');
+      btn.disabled=true;
+      btn.textContent='✓ השאלה נבדקה וננעלה';
+    }
+
+    function renderQuestionCompletionState(q) {
+      const st=questionStatus[q.id];
+      const wrap=document.getElementById('subQuestionsContainer');
+      wrap.classList.remove('question-locked');
+      const btn=document.getElementById('checkQuestionBtn');
+      btn.disabled=false;
+      btn.textContent='בדיקת השאלה';
+      const msg=document.getElementById('questionCheckMessage');
+      msg.classList.add('hidden');
+      document.getElementById('questionCertificatePanel').classList.add('hidden');
+      document.getElementById('questionResultActions').classList.add('hidden');
+      if (st?.locked) {
+        lockCurrentQuestionUI();
+        renderQuestionCertificate(q);
+        document.getElementById('questionResultActions').classList.remove('hidden');
+        msg.className='mt-3 rounded-xl p-3 text-sm bg-emerald-50 border border-emerald-200 text-emerald-900';
+        msg.textContent=`השאלה כבר נבדקה וננעלה בסבב הנוכחי. הציון: ${st.score}%.`;
+        msg.classList.remove('hidden');
+      }
+    }
+
+    function displayAnswerValue(v) {
+      if (Array.isArray(v)) {
+        if (v.length && Array.isArray(v[0])) return v.map(p=>p.join(' – ')).join('; ');
+        return v.join(', ');
+      }
+      if (v && typeof v==='object') return Object.values(v).join(', ');
+      return String(v ?? '');
+    }
+
+    function renderQuestionCertificate(q) {
+      const st=questionStatus[q.id];
+      if (!st?.locked) return;
+      document.getElementById('certQuestionTitle').textContent=`שאלה ${currentQuestionIndex+1}: ${q.title.replace(/^\s*\d+\s*[.\-:]\s*/, '')}`;
+      document.getElementById('certStudentName').textContent=studentInfo.name;
+      document.getElementById('certClassName').textContent=studentInfo.className;
+      document.getElementById('certTeacherName').textContent=studentInfo.teacherName;
+      document.getElementById('certCorrect').textContent=`${st.correct} מתוך ${st.total}`;
+      document.getElementById('certScore').textContent=`${st.score}%`;
+      document.getElementById('certDate').textContent=new Date().toLocaleString('he-IL');
+      const body=document.getElementById('certAnswersBody');
+      body.innerHTML='';
+      q.subQuestions.forEach(sq=>{
+        const r=studentResponses[`${q.id}_${sq.id}`];
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td><strong>${sq.label}</strong></td><td class="mixed-rtl">${formatMixedHtml(displayAnswerValue(r?.value))}</td><td>${r?.isCorrect?'✓ נכון':'✗ לא נכון'}</td>`;
+        body.appendChild(tr);
+      });
+      document.getElementById('questionCertificatePanel').classList.remove('hidden');
+    }
+
+    function scrollToQuestionCertificate() {
+      const panel=document.getElementById('questionCertificatePanel');
+      if (!panel.classList.contains('hidden')) panel.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    async function downloadQuestionCertificate() {
+      const q=questionsDatabase[currentQuestionIndex];
+      if (!questionStatus[q.id]?.locked) return;
+      const el=document.getElementById('questionCertificate');
+      try {
+        const canvas=await html2canvas(el,{
+          scale:2,
+          backgroundColor:'#ffffff',
+          useCORS:true,
+          logging:false,
+          width:390,
+          windowWidth:430
+        });
+        const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        if(!blob) throw new Error('image export failed');
+        const a=document.createElement('a');
+        const safe=(studentInfo.name||'תלמיד').replace(/[^\w\u0590-\u05FF-]+/g,'_');
+        a.download=`אישור-שאלה-${currentQuestionIndex+1}-${safe}.png`;
+        a.href=URL.createObjectURL(blob);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+      } catch(err) {
+        const msg=document.getElementById('questionCheckMessage');
+        msg.className='mt-3 rounded-xl p-3 text-sm bg-rose-50 border border-rose-200 text-rose-900';
+        msg.textContent='לא הצלחנו ליצור את תמונת האישור. נסו שוב לאחר רגע.';
+        msg.classList.remove('hidden');
+        console.error(err);
+      }
+    }
+
+    function loadStudentLists() {
+      // הכיתות קבועות ביישומון ושם המורה מוזן ידנית.
+      validateStudentGate();
+    }
+
+    function validateStudentGate() {
+      const name=document.getElementById('studentNameInput').value.trim();
+      const c=document.getElementById('studentClassInput').value;
+      const t=document.getElementById('studentTeacherInput').value.trim();
+      document.getElementById('studentStartBtn').disabled=!(name && c && t);
+    }
+
+    function startStudentSession() {
+      studentInfo.name=document.getElementById('studentNameInput').value.trim();
+      studentInfo.className=document.getElementById('studentClassInput').value;
+      studentInfo.teacherName=document.getElementById('studentTeacherInput').value.trim();
+      if(!studentInfo.name || !studentInfo.className || !studentInfo.teacherName) return;
+      document.getElementById('studentGate').classList.add('hidden');
+    }
+
     /**
      * Feedback UI updates
      */
@@ -1782,7 +2096,7 @@
         badge.classList.add('bg-rose-100', 'text-rose-800');
         badge.innerText = '✗ שגוי';
         fb.classList.add('bg-rose-50', 'text-rose-900', 'border', 'border-rose-200');
-        fb.innerHTML = `<strong>נסו שוב:</strong> ${formatMixedHtml(message)}`;
+        fb.innerHTML = `<strong>✗ לא נכון.</strong> התשובה נשמרה כחלק מהבדיקה הסופית של השאלה.`;
       }
     }
 
@@ -1822,10 +2136,11 @@
       const btn = document.getElementById('fullSolutionBtn');
       const txt = document.getElementById('fullSolutionBtnText');
       if (!btn || !txt) return;
-      const unlocked = isCurrentQuestionFullyChecked();
+      const q=questionsDatabase[currentQuestionIndex];
+      const unlocked = questionStatus[q.id]?.locked === true;
       btn.disabled = !unlocked;
       btn.querySelector('span:first-child').textContent = unlocked ? '📘' : '🔒';
-      txt.textContent = unlocked ? 'פתרון מלא מודרך' : 'פתרון מלא – לאחר בדיקת כל הסעיפים';
+      txt.textContent = unlocked ? 'פתרון מלא מודרך' : 'פתרון מלא – לאחר בדיקת השאלה';
       if (!unlocked) document.getElementById('questionSolutionModal').classList.add('hidden');
     }
 
@@ -1851,7 +2166,8 @@
     }
 
     function toggleCurrentSolution() {
-      if (!isCurrentQuestionFullyChecked()) return;
+      const q=questionsDatabase[currentQuestionIndex];
+      if (!questionStatus[q.id]?.locked) return;
       const modal = document.getElementById('questionSolutionModal');
       modal.classList.toggle('hidden');
       if (!modal.classList.contains('hidden')) {
@@ -1877,21 +2193,12 @@
      * Updates global progress score
      */
     function updateGlobalScore() {
-      let totalSubs = 0;
-      let solvedSubs = 0;
-
-      questionsDatabase.forEach(q => {
-        q.subQuestions.forEach(sq => {
-          totalSubs++;
-          if (studentResponses[`${q.id}_${sq.id}`]?.isCorrect) {
-            solvedSubs++;
-          }
-        });
-      });
-
-      document.getElementById('globalSolvedCount').innerText = solvedSubs;
-      const pct = totalSubs > 0 ? Math.round((solvedSubs / totalSubs) * 100) : 0;
-      document.getElementById('globalScorePct').innerText = `${pct}%`;
+      const checked=questionsDatabase.filter(q=>questionStatus[q.id]?.locked).length;
+      document.getElementById('globalSolvedCount').innerText=checked;
+      document.getElementById('globalTotalCount').innerText=questionsDatabase.length;
+      const q=questionsDatabase[currentQuestionIndex];
+      const st=questionStatus[q.id];
+      document.getElementById('globalScorePct').innerText=st?.locked ? `${st.score}%` : '—';
     }
 
     function resetCurrentQuestion() {
@@ -1905,6 +2212,11 @@
     // Initialize application when DOM is ready
     window.addEventListener('load', () => {
       initApp();
+      ['studentNameInput','studentClassInput','studentTeacherInput'].forEach(id=>{
+        const el=document.getElementById(id); el.addEventListener('input',validateStudentGate); el.addEventListener('change',validateStudentGate);
+      });
+      document.getElementById('studentStartBtn').addEventListener('click',startStudentSession);
+      loadStudentLists();
     });
   </script>
 </body>
