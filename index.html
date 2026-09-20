@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>סדנת חקירת גרפים - שאלות בגרות ומתמטיקה יישומית</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Rubik', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Rubik', sans-serif;
+      background-color: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .math-ltr, .time-ltr {
+      direction:ltr;
+      unicode-bidi:isolate;
+      display:inline-block;
+      text-align:left;
+    }
+    .mixed-rtl {
+      direction:rtl;
+      unicode-bidi:plaintext;
+      text-align:right;
+    }
+    @media (max-width: 640px) {
+      body { overflow-x:hidden; }
+      #questionSolutionModal { border-radius:20px; }
+      #solutionStepsList > div { min-width:0; overflow-wrap:anywhere; }
+      #subQuestionsContainer input,
+      #subQuestionsContainer select { max-width:100%; }
+      #chartTooltipIndicator { max-width:55%; text-align:center; line-height:1.25; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xl shadow-md">
+          📐
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">מעבדת חקירת גרפים ופונקציות</h1>
+          <p class="text-xs text-slate-500">שאלות ממאגר בחינות הבגרות עם בדיקה אוטומטית</p>
+        </div>
+      </div>
+
+      <!-- Global score & progress counters -->
+      <div class="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-2xl w-full sm:w-auto">
+        <div class="text-right">
+          <div class="text-xs text-slate-500">סעיפים שהושלמו</div>
+          <div class="text-sm font-bold text-slate-800">
+            <span id="globalSolvedCount" class="text-blue-600">0</span> / <span id="globalTotalCount">0</span>
+          </div>
+        </div>
+
+        <div class="h-7 w-px bg-slate-200"></div>
+
+        <div class="text-right">
+          <div class="text-xs text-slate-500">ציון כולל</div>
+          <div id="globalScorePct" class="text-sm font-extrabold text-emerald-600">0%</div>
+        </div>
+
+        <div class="h-7 w-px bg-slate-200"></div>
+
+        <button onclick="resetCurrentQuestion()" class="text-xs bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 font-semibold px-2.5 py-1.5 rounded-xl transition">
+          איפוס שאלה
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Navigation Stepper between the questions -->
+    <div class="bg-slate-100 border-t border-slate-200/80 px-4 sm:px-6 lg:px-8 py-2">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+        
+        <button id="prevQuestionBtn" onclick="navigateQuestion(-1)" class="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed">
+          <span>➔</span> שאלה קודמת
+        </button>
+
+        <!-- Dynamic pill stepper -->
+        <div id="questionsNavPills" class="flex items-center gap-2 overflow-x-auto py-1 custom-scrollbar">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <button id="nextQuestionBtn" onclick="navigateQuestion(1)" class="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl shadow-xs transition disabled:opacity-40 disabled:cursor-not-allowed">
+          שאלה הבאה <span>←</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-grow">
+    
+    <!-- Question scenario description container -->
+    <div class="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 mb-6 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1.5 max-w-4xl">
+          <div class="flex items-center gap-2">
+            <span id="qBadgeNumber" class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-lg">
+              שאלה 1 מתוך 3
+            </span>
+            <span id="qCategoryBadge" class="bg-slate-100 text-slate-600 text-xs font-medium px-2 py-0.5 rounded-md">
+              שאלת בגרות
+            </span>
+          </div>
+          <h2 id="qTitle" class="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
+            כותרת השאלה
+          </h2>
+          <p id="qStory" class="text-slate-700 text-sm sm:text-base leading-relaxed">
+            תיאור השאלה...
+          </p>
+        </div>
+
+        <!-- Question actions: hints & solutions -->
+        <div class="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0 self-stretch sm:self-center w-full sm:w-auto">
+          <button onclick="toggleAllHintsOnPage()" class="w-full sm:w-auto text-xs sm:text-sm font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5">
+            <span>💡</span> הצג/הסתר רמזים
+          </button>
+          <button id="fullSolutionBtn" onclick="toggleCurrentSolution()" class="w-full sm:w-auto text-xs sm:text-sm font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:bg-indigo-50" disabled>
+            <span>🔒</span><span id="fullSolutionBtnText">פתרון מלא – לאחר בדיקת כל הסעיפים</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Graph Column (Sticky on large screens) -->
+      <div class="lg:col-span-6 lg:sticky lg:top-36 z-10">
+        <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+              <h3 class="font-bold text-slate-900 text-sm sm:text-base">גרף השאלה</h3>
+            </div>
+            <div id="chartTooltipIndicator" class="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full">
+              לחצו על הגרף כדי לקרוא ערכים
+            </div>
+          </div>
+
+          <!-- Canvas container -->
+          <div class="relative w-full aspect-[4/3] bg-white rounded-2xl border border-slate-100 p-2 sm:p-3">
+            <canvas id="activeGraphCanvas"></canvas>
+          </div>
+
+          <!-- Chart legend and metadata -->
+          <div class="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+            <span id="xAxisDescription" class="font-medium text-slate-600"></span>
+            <span id="yAxisDescription" class="font-medium text-slate-600"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-questions list column -->
+      <div class="lg:col-span-6 space-y-4" id="subQuestionsContainer">
+        <!-- Sub-question cards dynamically injected here -->
+      </div>
+
+    </div>
+
+    <section id="questionSolutionModal" class="hidden mt-8 bg-white border-2 border-indigo-100 rounded-3xl p-4 sm:p-6 shadow-md transition-all">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📘</span>
+          <div>
+            <h3 class="text-lg font-bold text-indigo-950">פתרון מפורט ומודרך לשאלה הנוכחית</h3>
+            <p class="text-xs text-slate-500">עיינו בדרך הפתרון וההסברים המתמטיים</p>
+          </div>
+        </div>
+        <button onclick="toggleCurrentSolution()" class="text-slate-400 hover:text-slate-700 text-sm font-bold bg-slate-100 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition">✕</button>
+      </div>
+
+      <div id="solutionStepsList" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700">
+        <!-- Solution steps injected here -->
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-5 mt-10 text-center text-xs sm:text-sm text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>סביבת תרגול אינטראקטיבית במתמטיקה • ייצוג וניתוח גרפי</span>
+      <span class="text-slate-400">כולל את השאלות מתוך תמונות הבחינה שנשלחו</span>
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * DATABASE OF ALL THREE QUESTIONS FROM THE USER'S ATTACHED IMAGES
+     */
+    const questionsDatabase = [
+      {
+        id: "q1_bike",
+        title: "1. רוכב אופניים מקרית ביאליק",
+        category: "גרף מרחק-זמן (קינמטיקה)",
+        story: "רוכב אופניים יצא מקרית ביאליק. הגרף שלפניכם מתאר את המרחק של הרוכב מקרית ביאליק (בק\"מ), כפונקציה של הזמן (החל משעה 6:00 ועד 15:00). עיינו בגרף וענו על הסעיפים הבאים:",
+        graph: {
+          type: 'line',
+          tension: 0,
+          xLabel: "שעה ביממה",
+          yLabel: "מרחק מקרית ביאליק (ק\"מ)",
+          xMin: 6,
+          xMax: 15,
+          xStep: 1,
+          yMin: 0,
+          yMax: 27,
+          yStep: 5,
+          timeFormatter: true,
+          points: [
+            { x: 6, y: 5 },
+            { x: 7, y: 10 },
+            { x: 8, y: 15 },
+            { x: 9, y: 15 },
+            { x: 10, y: 15 },
+            { x: 11, y: 15 },
+            { x: 12, y: 25 },
+            { x: 13, y: 25 },
+            { x: 14, y: 17.5 },
+            { x: 15, y: 10 }
+          ]
+        },
+        subQuestions: [
+          {
+            id: "q1_a",
+            label: "א",
+            prompt: "באיזה מרחק מקרית ביאליק היה רוכב האופניים בשעה 11:00?",
+            type: "number",
+            unit: 'ק"מ',
+            expected: 15,
+            tolerance: 0,
+            hint: "אתרו את השעה 11:00 על ציר ה-X, עלו ישר למעלה לקו הגרף והסתכלו שמאלה לציר ה-Y.",
+            explanation: "בשעה 11:00 נקודת הגרף היא (11, 15), כלומר x = 11 ו-y = 15. לכן מרחקו היה בדיוק 15 ק\"מ מקרית ביאליק."
+          },
+          {
+            id: "q1_b",
+            label: "ב",
+            prompt: "באילו שעות היה רוכב האופניים במרחק של 10 ק\"מ מקרית ביאליק?",
+            type: "multi_time",
+            timeMin: 6,
+            timeMax: 15,
+            timeStep: 0.5,
+            expected: ["7", "15"],
+            hint: "אפשר ללחוץ על הגרף בגובה המתאים ולבדוק באילו זמנים מתקבל מרחק של 10 ק\"מ. אם מצאתם יותר מזמן אחד, הוסיפו שדה זמן נוסף.",
+            explanation: "הקו האופקי בגובה 10 ק\"מ חותך את הגרף בשעה 7:00 (בדרך הלוך) ובשעה 15:00 (בסוף המסלול)."
+          },
+          {
+            id: "q1_c",
+            label: "ג",
+            prompt: "כמה פעמים נח רוכב האופניים, וכמה זמן נמשכה כל מנוחה?",
+            type: "multi_input",
+            fields: [
+              { key: "stops", label: "כמה פעמים נח:", type: "number", expected: 2, tolerance: 0, unit: "פעמים" },
+              { key: "first_rest", label: "משך מנוחה ראשונה:", type: "number", expected: 3, tolerance: 0, unit: "שעות" },
+              { key: "second_rest", label: "משך מנוחה שנייה:", type: "number", expected: 1, tolerance: 0, unit: "שעה" }
+            ],
+            hint: "מנוחה מזוהה על ידי קו אופקי (המרחק נשאר זהה בזמן שהשעות חולפות).",
+            explanation: "נרשמו 2 מנוחות: הראשונה בין 8:00 ל-11:00 (3 שעות), והשנייה בין 12:00 ל-13:00 (שעה אחת)."
+          },
+          {
+            id: "q1_d",
+            label: "ד",
+            prompt: "איזה מרחק עבר רוכב האופניים בין השעה 13:00 ל-15:00?",
+            type: "number",
+            unit: 'ק"מ',
+            expected: 15,
+            tolerance: 0,
+            hint: "בשעה 13:00 היה במרחק 25 ק\"מ וב-15:00 היה במרחק 10 ק\"מ. חשבו את ההפרש.",
+            explanation: "בשעה 13:00 המרחק היה 25 ק\"מ ובשעה 15:00 המרחק היה 10 ק\"מ. לכן המרחק שעבר הוא 25 − 10 = 15 ק\"מ."
+          },
+          {
+            id: "q1_e",
+            label: "ה",
+            prompt: "באיזו מהירות נסע רוכב האופניים בין השעה 13:00 ל-15:00?",
+            type: "number",
+            unit: 'קמ"ש',
+            expected: 7.5,
+            tolerance: 0.1,
+            hint: "מהירות = מרחק חלקי זמן. הרוכב עבר 15 ק\"מ במשך שעתיים (מ-13:00 עד 15:00).",
+            explanation: "המרחק שעבר הוא 15 ק\"מ במשך 2 שעות, ולכן המהירות היא 15 ÷ 2 = 7.5 קמ\"ש."
+          },
+          {
+            id: "q1_f",
+            label: "ו",
+            prompt: "כמה ק\"מ בסך הכול רכב רוכב האופניים בין השעה 6:00 ל-15:00?",
+            type: "number",
+            unit: 'ק"מ',
+            expected: 35,
+            tolerance: 0,
+            hint: "סכמו את הקילומטרים שנרכבו בכל מקטע בנפרד: מ-5 ל-15 (10 ק\"מ), מ-15 ל-25 (10 ק\"מ), ומ-25 ל-10 (15 ק\"מ). שימו לב: ה-5 ק\"מ הראשונים היו נקודת המוצא ולא מרחק רכיבה.",
+            explanation: "מקטע 1 (6:00-8:00): עבר 10 ק\"מ. מקטע 2 (11:00-12:00): עבר 10 ק\"מ. מקטע 3 (13:00-15:00): עבר 15 ק\"מ. סה\"כ נרכבו: 10 + 10 + 15 = 35 ק\"מ."
+          },
+          {
+            id: "q1_g",
+            label: "ז",
+            prompt: "בין אילו שעות נסע רוכב האופניים במהירות הגדולה ביותר?",
+            type: "time_range",
+            timeMin: 6,
+            timeMax: 15,
+            timeStep: 0.5,
+            expected: ["11", "12"],
+            hint: "המהירות הגבוהה ביותר מתאימה לקטע שבו השיפוע הוא התלול ביותר (הכי הרבה קילומטרים בפחות זמן).",
+            explanation: "בין 11:00 ל-12:00 עבר הרוכב 10 ק\"מ בשעה אחת בלבד, כלומר 10 קמ\"ש, שזו המהירות הגבוהה ביותר."
+          }
+        ]
+      },
+      {
+        id: "q2_temperature",
+        title: "טמפרטורות בארץ אירופית ביום חורף",
+        category: "גרף רציף עם ערכים שליליים ושינוי ממוצע",
+        story: "הגרף שלפניכם מתאר את הטמפרטורות שנמדדו בארץ אירופית באחד מימי החורף. המדידות נערכו במשך 24 שעות החל מ-10:00 בבוקר ועד 10:00 בבוקר שלמחרת.",
+        graph: {
+          type: 'line',
+          tension: 0.38,
+          xLabel: "שעה ביממה",
+          yLabel: "טמפרטורה במעלות צלזיוס (°C)",
+          xMin: 10,
+          xMax: 34,
+          xStep: 1,
+          readStep: 0.5,
+          yMin: -9,
+          yMax: 14,
+          yStep: 1,
+          customTicksX: [
+            { val: 10, label: "10:00" }, { val: 12, label: "12:00" }, { val: 14, label: "14:00" },
+            { val: 16, label: "16:00" }, { val: 18, label: "18:00" }, { val: 20, label: "20:00" },
+            { val: 22, label: "22:00" }, { val: 24, label: "24:00" }, { val: 26, label: "2:00" },
+            { val: 28, label: "4:00" }, { val: 30, label: "6:00" }, { val: 32, label: "8:00" },
+            { val: 34, label: "10:00" }
+          ],
+          // נקודות עוגן לפי הגרף המקורי שהועלה. העקומה ביניהן חלקה.
+          points: [
+            { x: 10, y: 3 }, { x: 12, y: 6 }, { x: 14, y: 9 }, { x: 15, y: 10 },
+            { x: 16, y: 8 }, { x: 17, y: 5 }, { x: 18, y: 2 }, { x: 19, y: 0 },
+            { x: 20, y: -1 }, { x: 22, y: -3 }, { x: 24, y: -4.5 }, { x: 26, y: -5.8 },
+            { x: 28, y: -7 }, { x: 28.5, y: -6.5 }, { x: 30, y: 0 }, { x: 32, y: 3 }, { x: 34, y: 4 }
+          ]
+        },
+        subQuestions: [
+          {
+            id: "q2_a", label: "א",
+            prompt: "באיזו שעה נמדדה הטמפרטורה הגבוהה ביותר, ובאיזו שעה נמדדה הטמפרטורה הנמוכה ביותר?",
+            type: "multi_input",
+            fields: [
+              { key: "highest_hour", label: "שעת הטמפרטורה הגבוהה ביותר:", type: "time", expected: 15, timeMin: 10, timeMax: 34, timeStep: 1, wrap24: true },
+              { key: "lowest_hour", label: "שעת הטמפרטורה הנמוכה ביותר:", type: "time", expected: 28, timeMin: 10, timeMax: 34, timeStep: 1, wrap24: true }
+            ],
+            hint: "חפשו את הנקודה הגבוהה ביותר ואת הנקודה הנמוכה ביותר של העקומה, ואז קראו את השעה מציר ה-X.",
+            explanation: "שיא הגרף הוא בשעה 15:00, בטמפרטורה 10°C. השפל הוא בשעה 4:00 לפנות בוקר, בטמפרטורה ‎−7°C."
+          },
+          {
+            id: "q2_b", label: "ב",
+            prompt: "מהו הפער במעלות (ההפרש) בין הטמפרטורה הגבוהה ביותר לטמפרטורה הנמוכה ביותר?",
+            type: "number", unit: "מעלות", expected: 17, tolerance: 0,
+            hint: "הטמפרטורה הגבוהה ביותר היא 10°C והנמוכה ביותר היא ‎−7°C. חשבו את ההפרש ביניהן.",
+            explanation: "הטמפרטורה הגבוהה ביותר היא 10°C והנמוכה ביותר היא −7°C. לכן ההפרש הוא 10 − (−7) = 17 מעלות."
+          },
+          {
+            id: "q2_c", label: "ג",
+            prompt: "מהו קצב השינוי הממוצע של הטמפרטורה מהשעה 15:00 ועד השעה 19:00?",
+            type: "number", unit: "מעלות/שעה", expected: -2.5, tolerance: 0.05,
+            hint: "קראו מהגרף את הטמפרטורה ב-15:00 ואת הטמפרטורה ב-19:00, ואז חלקו את השינוי בטמפרטורה ב-4 שעות.",
+            explanation: "בשעה 15:00 הטמפרטורה הייתה 10°C ובשעה 19:00 היא הייתה 0°C. חלפו 4 שעות, ולכן קצב השינוי הממוצע הוא (0 − 10) ÷ 4 = −2.5 מעלות לשעה."
+          },
+          {
+            id: "q2_d", label: "ד",
+            prompt: "בין אילו שעות היה קצב השינוי הממוצע של הטמפרטורה הגדול ביותר: בין 10:00 ל-15:00 או בין 6:00 ל-10:00 בבוקר שלמחרת?",
+            type: "radio",
+            options: [
+              { value: "10-15", label: "בין 10:00 ל-15:00" },
+              { value: "6-10", label: "בין 6:00 ל-10:00 בבוקר שלמחרת" }
+            ],
+            expected: "10-15",
+            hint: "חשבו בכל תחום: שינוי בטמפרטורה חלקי מספר השעות. אל תסתפקו במראה של העקומה.",
+            explanation: "בין 10:00 ל-15:00 קצב השינוי הממוצע הוא (10 − 3) ÷ 5 = 1.4 מעלות לשעה. בין 6:00 ל-10:00 בבוקר שלמחרת קצב השינוי הממוצע הוא (4 − 0) ÷ 4 = 1 מעלה לשעה. לכן קצב השינוי הממוצע הגדול יותר הוא בין 10:00 ל-15:00."
+          },
+          {
+            id: "q2_e", label: "ה",
+            prompt: "בין אילו שעות הייתה הטמפרטורה במגמת ירידה?",
+            type: "time_range", timeMin: 10, timeMax: 34, timeStep: 0.5, wrap24: true,
+            expected: ["15", "28"],
+            hint: "מצאו את שיא העקומה ועקבו אחריה עד לנקודה שבה היא מפסיקה לרדת ומתחילה לעלות.",
+            explanation: "הטמפרטורה יורדת ברציפות מהשיא בשעה 15:00 ועד לשפל בשעה 4:00 לפנות בוקר."
+          }
+        ]
+      },
+      {
+        id: "q3_transport",
+        title: "השוואת נסיעה ברכבת ובמטוס",
+        category: "גרף איכותי / דיאגרמת פיזור (Scatter Plot)",
+        story: "הגרף הבא מתאר זמן ועלות של נסיעה מ-A ל-B של ארבעה אנשים במטוס וברכבת. נסיעה ברכבת זולה מנסיעה במטוס, אך אורכת זמן רב יותר.",
+        graph: {
+          type: 'scatter',
+          xLabel: "זמן הנסיעה ➔ (ימינה = זמן ארוך יותר)",
+          yLabel: "מחיר הכרטיס ⬆ (למעלה = יקר יותר)",
+          xMin: 0,
+          xMax: 10,
+          yMin: 0,
+          yMax: 10,
+          hideTickValues: true,
+          points: [
+            { x: 2.5, y: 5.5, label: "1", note: "מטוס - תיירים (זול במטוס, זמן קצר)" },
+            { x: 2.5, y: 8.0, label: "2", note: "מטוס - מחלקה ראשונה (היקר ביותר)" },
+            { x: 7.5, y: 3.5, label: "3", note: "רכבת - כרטיס רגיל (הזול ביותר)" },
+            { x: 7.5, y: 5.2, label: "4", note: "רכבת - מחלקה ראשונה (מחיר דומה למטוס תיירים)" }
+          ]
+        },
+        subQuestions: [
+          {
+            id: "q3_a",
+            label: "א",
+            prompt: "יוסי נסע ברכבת במחלקה ראשונה (היקרה יותר מבין כרטיסי הרכבת). איזו נקודה בגרף מתארת את הזמן והעלות של נסיעתו?",
+            type: "radio",
+            options: [
+              { value: "1", label: "נקודה 1" },
+              { value: "2", label: "נקודה 2" },
+              { value: "3", label: "נקודה 3" },
+              { value: "4", label: "נקודה 4" }
+            ],
+            expected: "4",
+            hint: "רכבת נמצאת בצד ימין של הגרף (זמן נסיעה ארוך). מבין הנקודות ברכבת (3 ו-4), מחלקה ראשונה יקרה יותר (גבוהה יותר בציר ה-Y).",
+            explanation: "נסיעה ברכבת לוקחת זמן רב יותר, לכן היא מימין (נקודות 3 ו-4). מכיוון שיוסי נסע במחלקה ראשונה ויקרה יותר, זו הנקודה הגבוהה מביניהן – נקודה 4."
+          },
+          {
+            id: "q3_b",
+            label: "ב",
+            prompt: "דינה טסה במחלקת תיירים (הזולה יותר מבין כרטיסי המטוס). איזו נקודה בגרף מתארת את הזמן והעלות של נסיעתה?",
+            type: "radio",
+            options: [
+              { value: "1", label: "נקודה 1" },
+              { value: "2", label: "נקודה 2" },
+              { value: "3", label: "נקודה 3" },
+              { value: "4", label: "נקודה 4" }
+            ],
+            expected: "1",
+            hint: "מטוס אורך זמן קצר יותר, לכן הוא בצד שמאל (נקודות 1 ו-2). מחלקת תיירים היא הזולה יותר (נמוכה יותר בציר ה-Y).",
+            explanation: "טיסה במטוס אורכת זמן קצר (צד שמאל של הגרף - נקודות 1 ו-2). מחלקת תיירים זולה יותר, ולכן זו הנקודה הנמוכה יותר – נקודה 1."
+          },
+          {
+            id: "q3_c",
+            label: "ג",
+            prompt: "איזה כרטיס הוא היקר ביותר מכולם?",
+            type: "radio",
+            options: [
+              { value: "1", label: "כרטיס 1" },
+              { value: "2", label: "כרטיס 2" },
+              { value: "3", label: "כרטיס 3" },
+              { value: "4", label: "כרטיס 4" }
+            ],
+            expected: "2",
+            hint: "כרטיס יקר נמצא במקום הגבוה ביותר לאורך ציר ה-Y (ציר מחיר הכרטיס).",
+            explanation: "נקודה 2 נמצאת במיקום הגבוה ביותר בציר האנכי, כלומר מחירו הוא הגבוה ביותר (טיסה במחלקה ראשונה)."
+          },
+          {
+            id: "q3_d",
+            label: "ד",
+            prompt: "אילו שני כרטיסים עולים כמעט אותו מחיר?",
+            type: "radio",
+            options: [
+              { value: "1,2", label: "כרטיסים 1 ו- 2" },
+              { value: "1,4", label: "כרטיסים 1 ו- 4" },
+              { value: "3,4", label: "כרטיסים 3 ו- 4" },
+              { value: "2,4", label: "כרטיסים 2 ו- 4" }
+            ],
+            expected: "1,4",
+            hint: "חפשו שתי נקודות שנמצאות בערך באותו גובה אנכי (אותו ערך של ציר המחיר Y).",
+            explanation: "נקודות 1 ו-4 נמצאות כמעט באותו קו אופקי בגובה Y, כלומר טיסה במחלקת תיירים ומחלקה ראשונה ברכבת עולות מחיר דומה מאוד."
+          },
+          {
+            id: "q3_e",
+            label: "ה",
+            prompt: "פנינה החליטה לנסוע באוטובוס (נסיעה איטית יותר וזולה יותר מרכבת). היכן תמוקם הנקודה המתארת את נסיעתה בגרף?",
+            type: "relative_pair",
+            fields: [
+              { key: "time", label: "זמן הנסיעה באוטובוס ביחס לרכבת", expected: "longer", options: [
+                { value: "", label: "בחרו..." }, { value: "shorter", label: "קצר יותר" }, { value: "same", label: "בערך זהה" }, { value: "longer", label: "ארוך יותר" }
+              ]},
+              { key: "price", label: "מחיר הנסיעה באוטובוס ביחס לרכבת", expected: "lower", options: [
+                { value: "", label: "בחרו..." }, { value: "lower", label: "נמוך יותר" }, { value: "same", label: "בערך זהה" }, { value: "higher", label: "גבוה יותר" }
+              ]}
+            ],
+            hint: "חשבו בנפרד על שני הצירים: מה פירוש נסיעה איטית יותר מבחינת זמן, ומה פירוש נסיעה זולה יותר מבחינת מחיר?",
+            explanation: "נסיעה באוטובוס אורכת יותר זמן מרכבת (לכן מימין לנקודה 3) והיא זולה יותר מרכבת (לכן מתחת לנקודה 3)."
+          }
+        ]
+      },
+      {
+        id: "q4_trains",
+        title: "לוח זמנים של רכבות בין לוליה לטוגין",
+        category: "גרף מקום–זמן / לוח זמנים",
+        story: "הגרף מתאר לוח זמנים של רכבות בוקר בין לוליה לטוגין, עם תחנות ביניים בכפר א ובכפר ב. קו אלכסוני מתאר נסיעה; קטע אופקי בתחנת ביניים מתאר עצירה בתחנה.",
+        graph: {
+          type: 'schedule',
+          xLabel: "שעה",
+          yLabel: "תחנה",
+          xMin: 6, xMax: 10, xStep: 0.5,
+          yMin: 0, yMax: 3, yStep: 1,
+          stationLabels: ["לוליה", "כפר א", "כפר ב", "טוגין"],
+          trains: [
+            { id:"m600", label:"יוצאת מלוליה 6:00", points:[{x:6.00,y:0},{x:6.83,y:3}] },
+            { id:"t630", label:"יוצאת מטוגין 6:30", points:[{x:6.50,y:3},{x:7.25,y:0}] },
+            { id:"m700", label:"יוצאת מלוליה 7:00", points:[{x:7.00,y:0},{x:7.50,y:1},{x:7.75,y:1},{x:8.50,y:3}] },
+            { id:"t730", label:"יוצאת מטוגין 7:30", points:[{x:7.50,y:3},{x:9.00,y:0}] },
+            { id:"m830", label:"יוצאת מלוליה 8:30", points:[{x:8.50,y:0},{x:9.17,y:2},{x:9.33,y:2},{x:9.50,y:3}] },
+            { id:"m930", label:"יוצאת מלוליה 9:30", points:[{x:9.50,y:0},{x:10.00,y:3}] }
+          ]
+        },
+        subQuestions: [
+          {
+            id:"q4_a", label:"א",
+            prompt:"באיזו שעה מגיעה לטוגין רכבת שיוצאת מלוליה בשעה 7:00?",
+            type:"single_time", timeMin:6, timeMax:10, timeStep:1/12, expected:"8.5",
+            hint:"עקבו אחרי הקו שמתחיל בלוליה בשעה 7:00 עד שהוא מגיע לקו של טוגין.",
+            explanation:"הרכבת שיוצאת מלוליה ב-7:00 מגיעה לטוגין בשעה 8:30."
+          },
+          {
+            id:"q4_b", label:"ב",
+            prompt:"באיזו שעה מגיעה ללוליה רכבת שיוצאת מטוגין בשעה 7:30?",
+            type:"single_time", timeMin:6, timeMax:10, timeStep:1/12, expected:"9",
+            hint:"התחילו בטוגין בשעה 7:30 ועקבו אחרי הקו היורד עד לוליה.",
+            explanation:"הרכבת שיוצאת מטוגין ב-7:30 מגיעה ללוליה בשעה 9:00."
+          },
+          {
+            id:"q4_c", label:"ג",
+            prompt:"ציינו ליד כל רכבת אם היא רכבת ישירה או רכבת מאספת.",
+            type:"train_classify",
+            trains:[
+              {key:"m600",label:"מלוליה 6:00",expected:"direct"},
+              {key:"t630",label:"מטוגין 6:30",expected:"direct"},
+              {key:"m700",label:"מלוליה 7:00",expected:"local"},
+              {key:"t730",label:"מטוגין 7:30",expected:"direct"},
+              {key:"m830",label:"מלוליה 8:30",expected:"local"},
+              {key:"m930",label:"מלוליה 9:30",expected:"direct"}
+            ],
+            hint:"רכבת שעוצרת בתחנת ביניים מיוצגת בקטע אופקי קצר בגובה התחנה. רכבת ישירה ממשיכה בלי קטע עצירה.",
+            explanation:"הרכבות של 7:00 ושל 8:30 מלוליה הן מאספות, כי מופיעה בהן עצירה בתחנת ביניים. שאר הרכבות המוצגות הן ישירות."
+          },
+          {
+            id:"q4_d", label:"ד",
+            prompt:"דינה רוצה לנסוע מלוליה לכפר א. יש רק רכבת אחת מתאימה. באיזו שעה עליה לצאת?",
+            type:"single_time", timeMin:6, timeMax:10, timeStep:0.5, expected:"7",
+            hint:"חפשו רכבת שיוצאת מלוליה וגם עוצרת בכפר א — לא רק עוברת לידו.",
+            explanation:"הרכבת שיוצאת מלוליה בשעה 7:00 עוצרת בכפר א, ולכן זו הרכבת המתאימה."
+          },
+          {
+            id:"q4_e", label:"ה",
+            prompt:"יונה רוצה לנסוע מלוליה לכפר ב. יש רק רכבת אחת מתאימה. באיזו שעה עליו לצאת?",
+            type:"single_time", timeMin:6, timeMax:10, timeStep:0.5, expected:"8.5",
+            hint:"חפשו רכבת שיוצאת מלוליה ובה מופיעה עצירה בכפר ב.",
+            explanation:"הרכבת שיוצאת מלוליה בשעה 8:30 עוצרת בכפר ב."
+          },
+          {
+            id:"q4_f", label:"ו",
+            prompt:"איזו רכבת מהירה יותר: זו שיוצאת מלוליה ב-7:00 או זו שיוצאת ב-8:30? הזינו את שעת היציאה של הרכבת המהירה יותר.",
+            type:"single_time", timeMin:7, timeMax:9, timeStep:0.5, expected:"8.5",
+            hint:"השוו את משך הזמן הכולל מהיציאה מלוליה ועד ההגעה לטוגין.",
+            explanation:"הרכבת של 7:00 מגיעה ב-8:30 — שעה וחצי. הרכבת של 8:30 מגיעה ב-9:30 — שעה. לכן הרכבת שיוצאת ב-8:30 מהירה יותר."
+          },
+          {
+            id:"q4_g", label:"ז",
+            prompt:"מצאו את הרכבת המהירה ביותר. הזינו את שעת היציאה שלה.",
+            type:"single_time", timeMin:6, timeMax:10, timeStep:1/12, expected:"9.5",
+            hint:"השוו את משך הנסיעה מקצה אחד של המסלול לקצה השני עבור כל הקווים.",
+            explanation:"הרכבת שיוצאת מלוליה ב-9:30 מגיעה לטוגין ב-10:00, ולכן משך נסיעתה 30 דקות — הקצר ביותר בגרף."
+          },
+          {
+            id:"q4_h", label:"ח",
+            prompt:"כמה זמן חלף מהרגע שהרכבת שיצאה מטוגין ב-7:30 יצאה, עד שפגשה את הרכבת שיצאה מלוליה ב-7:00?",
+            type:"number", unit:"דקות", expected:30, tolerance:3,
+            hint:"נקודת המפגש היא נקודת החיתוך של שני קווי הרכבות. קראו את שעת החיתוך והשוו אותה ל-7:30.",
+            explanation:"שני הקווים נפגשים בערך בשעה 8:00. מהרגע שהרכבת מטוגין יצאה ב-7:30 חלפו כ-30 דקות."
+          },
+          {
+            id:"q4_i", label:"ט",
+            prompt:"המרחק בין שתי הערים הוא 90 ק״מ. מהי המהירות הממוצעת של הרכבת שיוצאת מטוגין ב-7:30?",
+            type:"number", unit:"קמ״ש", expected:60, tolerance:0,
+            hint:"מצאו תחילה כמה זמן נמשכה הנסיעה מטוגין ללוליה, ואז השתמשו במהירות = מרחק ÷ זמן.",
+            explanation:"הרכבת נוסעת מ-7:30 עד 9:00, כלומר במשך 1.5 שעות. המרחק הוא 90 ק״מ, ולכן המהירות הממוצעת היא 90 ÷ 1.5 = 60 קמ״ש."
+          }
+        ]
+      },
+      {
+        id:"q5_medicine",
+        title:"ריכוז תרופה בדם לאורך זמן",
+        category:"גרף איכותי / ריכוז תרופה",
+        story:"הגרף מתאר ריכוז של תרופה בדם לאורך זמן. הריכוז עולה כמעט מיד עם הזרקת התרופה, ולאחר מכן יורד במשך הזמן עד סילוק התרופה מן הגוף. העלייה המהירה בריכוז התרופה מתוארת בגרף בקווים כמעט מאונכים.",
+        graph:{
+          type:'medicine',
+          xLabel:"שעה",
+          yLabel:"ריכוז התרופה בדם",
+          xMin:0.5,
+          xMax:18,
+          xStep:1,
+          yMin:0,
+          yMax:8,
+          efficacyThreshold:3,
+          toxicityThreshold:7,
+          points:[
+            {x:1,y:0.5},{x:1,y:6.0},{x:2,y:4.2},{x:3,y:3.45},{x:4,y:3.0},{x:6.7,y:2.65},
+            {x:7,y:2.6},{x:7,y:6.0},{x:8,y:4.2},{x:9,y:3.45},{x:10,y:3.0},{x:12.7,y:2.65},
+            {x:13,y:2.6},{x:13,y:6.2},{x:14,y:4.25},{x:15,y:3.45},{x:16,y:3.0},{x:18,y:2.75}
+          ]
+        },
+        subQuestions:[
+          {
+            id:"q5_a",label:"א",
+            prompt:"באיזו שעה ניתנה הזריקה הראשונה, וכל כמה שעות מזריקים את התרופה?",
+            type:"time_and_number",timeMin:1,timeMax:18,timeStep:1,expectedTime:"1",expectedNumber:6,numberUnit:"שעות",
+            hint:"זהו את העלייה הכמעט אנכית הראשונה, ואחר כך בדקו את המרווח בין העליות הבאות.",
+            explanation:"הזריקה הראשונה ניתנה בשעה 1:00. העליות הבאות מופיעות בשעות 7:00 ו-13:00, ולכן מזריקים את התרופה כל 6 שעות."
+          },
+          {
+            id:"q5_b",label:"ב",
+            prompt:"מתי ירד ריכוז התרופה בדם מהר יותר – שעה אחרי נטילתה או שעה לפני נטילתה הבאה?",
+            type:"radio",
+            options:[{value:"after",label:"שעה אחרי הזריקה"},{value:"before",label:"שעה לפני הזריקה הבאה"}],
+            expected:"after",
+            hint:"השוו את תלילות הגרף סמוך לשיא לבין תלילותו לקראת סוף פרק הזמן שלפני הזריקה הבאה.",
+            explanation:"שעה אחרי הזריקה הגרף יורד בתלילות רבה יותר. לקראת הזריקה הבאה הגרף מתמתן, ולכן הריכוז יורד לאט יותר."
+          },
+          {
+            id:"q5_c",label:"ג",
+            prompt:"כמה שעות לאחר נטילת התרופה היא מפסיקה להיות יעילה?",
+            type:"number",unit:"שעות",expected:3,tolerance:0,
+            hint:"בדקו כמה זמן עובר מן הזריקה עד שהגרף מגיע לסף היעילות.",
+            explanation:"לאחר כל זריקה הגרף מגיע לסף היעילות כעבור 3 שעות: למשל מ-1:00 עד 4:00. לכן התרופה מפסיקה להיות יעילה כעבור 3 שעות."
+          },
+          {
+            id:"q5_d",label:"ד",
+            prompt:"האם ניתן להגדיל את מינון התרופה, מבלי שהיא תהיה רעילה?",
+            type:"radio",
+            options:[{value:"yes",label:"כן"},{value:"no",label:"לא"}],
+            expected:"yes",
+            hint:"השוו את שיאי הריכוז לאחר הזריקות לסף הרעילות.",
+            explanation:"כן. שיאי הריכוז נמצאים מתחת לסף הרעילות, ולכן יש מרווח מסוים שבו ניתן להעלות את המינון בלי לעבור את הסף. עם זאת, לפי הגרף בלבד אי אפשר לקבוע מהו המינון המרבי המדויק."
+          }
+        ]
+      },
+      {
+        id:"q6_sunlight",
+        title:"זמני זריחה ושקיעה בתל אביב לאורך שנתיים",
+        category:"שני גרפים / שעות לאורך חודשים",
+        story:"הגרפים מתארים את זמני הזריחה והשקיעה של השמש בתל אביב ב-1 בכל חודש, במשך שנתיים, החל מ-1 בינואר. ציר X מציג את מספר החודש וציר Y מציג את השעה ביממה.",
+        graph:{
+          type:'sunlight',
+          xLabel:"מספר החודש",
+          yLabel:"שעה ביממה",
+          xMin:0,
+          xMax:24,
+          yMin:0,
+          yMax:20,
+          sunrise:[
+            {x:1,y:7.0},{x:2,y:6.7},{x:3,y:6.3},{x:4,y:5.7},{x:5,y:5.2},{x:6,y:4.8},
+            {x:7,y:4.6},{x:8,y:4.5},{x:9,y:4.8},{x:10,y:5.2},{x:11,y:5.7},{x:12,y:6.1},
+            {x:13,y:6.5},{x:14,y:6.8},{x:15,y:6.5},{x:16,y:6.0},{x:17,y:5.5},{x:18,y:5.0},
+            {x:19,y:4.7},{x:20,y:4.6},{x:21,y:4.8},{x:22,y:5.2},{x:23,y:5.6},{x:24,y:6.1}
+          ],
+          sunset:[
+            {x:1,y:17.0},{x:2,y:17.5},{x:3,y:18.0},{x:4,y:18.2},{x:5,y:18.4},{x:6,y:18.8},
+            {x:7,y:19.0},{x:8,y:19.1},{x:9,y:18.8},{x:10,y:18.3},{x:11,y:17.7},{x:12,y:17.1},
+            {x:13,y:16.7},{x:14,y:16.8},{x:15,y:17.1},{x:16,y:17.6},{x:17,y:18.0},{x:18,y:18.3},
+            {x:19,y:18.6},{x:20,y:18.9},{x:21,y:19.0},{x:22,y:18.5},{x:23,y:17.8},{x:24,y:17.2}
+          ]
+        },
+        subQuestions:[
+          {
+            id:"q6_a",label:"א",
+            prompt:"בתחילת איזה חודש השמש זורחת הכי מאוחר?",
+            type:"month_select", expected:[1,14],
+            hint:"חפשו את הנקודה הגבוהה ביותר בגרף הזריחה (הנקודות הכחולות).",
+            explanation:"זמן הזריחה המאוחר ביותר מופיע בתחילת חודש 1 ובמחזור השני שוב סביב חודש 14. שני המקומות מתקבלים מן הגרף."
+          },
+          {
+            id:"q6_b",label:"ב",
+            prompt:"תנו דוגמה לשני חודשים שבהם יש יותר מ-12 שעות אור.",
+            type:"two_months_daylight",
+            hint:"אורך היום הוא ההפרש בין שעת השקיעה לשעת הזריחה. בחרו חודשים שבהם ההפרש גדול מ-12 שעות.",
+            explanation:"כל זוג חודשים שבהם שעת השקיעה פחות שעת הזריחה גדולה מ-12 שעות הוא תשובה אפשרית."
+          },
+          {
+            id:"q6_c",label:"ג",
+            prompt:"ציינו תקופה כלשהי שבה הימים מתארכים.",
+            type:"month_range_growth",
+            hint:"הימים מתארכים כאשר המרחק האנכי בין גרף השקיעה לגרף הזריחה הולך וגדל.",
+            explanation:"בתקופה שבה ההפרש בין שעת השקיעה לשעת הזריחה גדל, אורך היום מתארך. יש כמה תקופות תקינות בגרף."
+          },
+          {
+            id:"q6_d",label:"ד",
+            prompt:"מצאו בגרף את הזמן שבו ההפרש בין שני ערכי הגרפים הוא הגדול ביותר. באיזה חודש זה קורה?",
+            type:"month_select", expected:[8,20,21],
+            hint:"חפשו היכן המרחק האנכי בין גרף השקיעה לגרף הזריחה הוא הגדול ביותר.",
+            explanation:"ההפרש הגדול ביותר מתקבל בקיץ, סביב חודשים 8 ובמחזור השני סביב 20–21, שבהם היום הוא הארוך ביותר."
+          }
+        ]
+      },
+      {
+        id:"q7_hikers",
+        title:"שתי קבוצות צועדים באזור מטולה",
+        category:"שני גרפי מרחק–זמן",
+        story:"שתי קבוצות צועדים יצאו למסע באזור מטולה. הקבוצה המהירה צעדה במהירות של 6 קמ״ש, והקבוצה האיטית צעדה במהירות של 4 קמ״ש. כל אחת מהקבוצות עשתה מנוחה אחת במהלך המסע. הגרפים I ו-II מתארים את המרחק של שתי הקבוצות מנקודת המוצא לפי הזמן.",
+        graph:{
+          type:'multi_line', xLabel:"שעה", yLabel:"מרחק בק״מ",
+          xMin:4, xMax:12, xStep:1, yMin:0, yMax:25, yStep:1,
+          timeFormatter:true, readStep:0.5,
+          datasets:[
+            {label:"I", color:"#111827", points:[{x:4,y:0},{x:6,y:12},{x:7,y:12},{x:9,y:24}]},
+            {label:"II", color:"#475569", points:[{x:5,y:0},{x:8,y:12},{x:9,y:12},{x:12,y:24}]}
+          ]
+        },
+        subQuestions:[
+          {id:"q7_a",label:"א",prompt:"איזה מהגרפים, I או II, מתאים לקבוצה המהירה?",type:"radio",options:[{value:"I",label:"גרף I"},{value:"II",label:"גרף II"}],expected:"I",hint:"השוו את שיפוע הקווים בזמן שהקבוצות הולכות. הקבוצה המהירה עוברת יותר קילומטרים בכל שעה.",explanation:"גרף I מתאים לקבוצה המהירה. בזמן ההליכה השיפוע שלו גדול יותר, והוא מתאר מהירות של 6 קמ״ש."},
+          {id:"q7_b",label:"ב",prompt:"באיזה מרחק מנקודת המוצא הייתה כל אחת מהקבוצות בשעה 6:00 בבוקר?",type:"multi_input",fields:[{key:"fast",label:"הקבוצה המהירה",expected:12,tolerance:0,unit:"ק״מ"},{key:"slow",label:"הקבוצה האיטית",expected:4,tolerance:0,unit:"ק״מ"}],hint:"קראו את שני הגרפים מעל השעה 6:00.",explanation:"בשעה 6:00 הקבוצה המהירה הייתה במרחק 12 ק״מ מנקודת המוצא, והקבוצה האיטית הייתה במרחק 4 ק״מ."},
+          {id:"q7_c",label:"ג",prompt:"באיזו שעה הייתה הקבוצה המהירה במרחק של 18 ק״מ מנקודת המוצא?",type:"single_time",timeMin:4,timeMax:12,timeStep:0.5,expected:"8",hint:"עקבו אחרי גרף I וחפשו את הנקודה שבה המרחק הוא 18 ק״מ.",explanation:"אחרי המנוחה הקבוצה המהירה יוצאת שוב בשעה 7:00 ממרחק 12 ק״מ. במהירות 6 קמ״ש דרושה שעה נוספת כדי להגיע ל-18 ק״מ, ולכן השעה היא 8:00."},
+          {id:"q7_d",label:"ד",prompt:"מה היה המרחק בין הקבוצות כאשר הקבוצה האיטית התחילה את המנוחה שלה?",type:"number",unit:"ק״מ",expected:6,tolerance:0,hint:"מצאו מתי מתחיל הקטע האופקי בגרף II, ואז קראו באותה שעה את המרחק של גרף I.",explanation:"הקבוצה האיטית מתחילה לנוח בשעה 8:00 כשהיא במרחק 12 ק״מ. באותה שעה הקבוצה המהירה נמצאת במרחק 18 ק״מ. לכן המרחק ביניהן הוא 18 − 12 = 6 ק״מ."}
+        ]
+      },
+      {
+        id:"q8_tanks",
+        title:"מילוי שני מכלי מים",
+        category:"שני גרפים ליניאריים / כמות–זמן",
+        story:"נתונים שני מכלים. מכל א ריק, ובמכל ב יש בתחילה 48 ליטר מים. מזרימים מים לשני המכלים עד שהם מתמלאים. הגרפים מתארים את כמות המים בשני המכלים לפי הזמן, החל מרגע פתיחת הברזים.",
+        graph:{
+          type:'multi_line', xLabel:"דקות", yLabel:"ליטרים",
+          xMin:0, xMax:26, xStep:2, yMin:0, yMax:160, yStep:8, readStep:1,
+          datasets:[
+            {label:"מכל א", color:"#111827", points:[{x:0,y:0},{x:20,y:160},{x:26,y:160}]},
+            {label:"מכל ב", color:"#475569", points:[{x:0,y:48},{x:22,y:136},{x:26,y:136}]}
+          ]
+        },
+        subQuestions:[
+          {id:"q8_a",label:"א",prompt:"כמה ליטרים מים יש בכל אחד מהמכלים 4 דקות לאחר פתיחת הברזים?",type:"multi_input",fields:[{key:"a",label:"מכל א",expected:32,tolerance:0,unit:"ליטר"},{key:"b",label:"מכל ב",expected:64,tolerance:0,unit:"ליטר"}],hint:"קראו את שני הגרפים מעל הדקה 4.",explanation:"לאחר 4 דקות יש במכל א 32 ליטר ובמכל ב 64 ליטר."},
+          {id:"q8_b",label:"ב",prompt:"לאחר כמה דקות מרגע פתיחת הברזים היו במכל א 120 ליטר מים, ולאחר כמה דקות היו במכל ב 120 ליטר מים?",type:"multi_input",fields:[{key:"a",label:"מכל א",expected:15,tolerance:0,unit:"דקות"},{key:"b",label:"מכל ב",expected:18,tolerance:0,unit:"דקות"}],hint:"התחילו בגובה 120 ליטר ועברו אופקית עד כל אחד מן הגרפים, ואז רדו אל ציר הזמן.",explanation:"מכל א מגיע ל-120 ליטר לאחר 15 דקות. מכל ב מתחיל ב-48 ליטר ומתמלא בקצב של 4 ליטר לדקה, ולכן 48 + 4 × 18 = 120; הוא מגיע ל-120 ליטר לאחר 18 דקות."},
+          {id:"q8_c",label:"ג",prompt:"במשך כמה דקות, מרגע פתיחת הברזים, הייתה כמות המים במכל ב גדולה מכמות המים במכל א?",type:"number",unit:"דקות",expected:12,tolerance:0,hint:"מצאו את נקודת החיתוך של שני הגרפים. עד נקודה זו גרף מכל ב נמצא מעל גרף מכל א.",explanation:"הגרפים נפגשים לאחר 12 דקות. עד אז גרף מכל ב גבוה יותר, ולכן במשך 12 הדקות הראשונות כמות המים במכל ב גדולה יותר."},
+          {id:"q8_d",label:"ד",prompt:"באיזה מכל היו יותר מים 20 דקות לאחר פתיחת הברזים, ובכמה ליטרים יותר?",type:"choice_number",choices:[{value:"a",label:"מכל א"},{value:"b",label:"מכל ב"}],expectedChoice:"a",expectedNumber:32,tolerance:0,unit:"ליטר",hint:"קראו את כמות המים בשני המכלים בדקה 20 והשוו ביניהן.",explanation:"בדקה 20 מכל א כבר מלא ובו 160 ליטר. במכל ב יש 48 + 4 × 20 = 128 ליטר. לכן במכל א יש 160 − 128 = 32 ליטר יותר."},
+          {id:"q8_e",label:"ה",prompt:"לאחר כמה דקות מרגע פתיחת הברזים התמלא מכל ב?",type:"number",unit:"דקות",expected:22,tolerance:0,hint:"חפשו את הרגע שבו גרף מכל ב מפסיק לעלות והופך לאופקי.",explanation:"גרף מכל ב הופך לאופקי בדקה 22, ולכן המכל התמלא לאחר 22 דקות."}
+        ]
+      },
+      {
+        id:"q9_truck",
+        title:"נסיעת משאית מתל אביב לשני מחנות ובחזרה",
+        category:"גרף מרחק–זמן",
+        story:"משאית יצאה מתל אביב, עצרה בשני מחנות צבא, וחזרה לתל אביב. הגרף מתאר את המרחק של המשאית מתל אביב מרגע יציאתה ועד רגע חזרתה.",
+        graph:{type:'line',xLabel:"שעות",yLabel:"ק״מ",xMin:0,xMax:11,xStep:1,yMin:0,yMax:150,yStep:10,readStep:0.5,fill:false,points:[{x:0,y:0},{x:2,y:100},{x:3,y:100},{x:4,y:140},{x:9,y:140},{x:11,y:0}]},
+        subQuestions:[
+          {id:"q9_a",label:"א",prompt:"כמה זמן התעכבה המשאית במחנה הראשון, וכמה זמן התעכבה במחנה השני?",type:"multi_input",fields:[{key:"first",label:"במחנה הראשון",expected:1,tolerance:0,unit:"שעה"},{key:"second",label:"במחנה השני",expected:5,tolerance:0,unit:"שעות"}],hint:"קטעים אופקיים בגרף מתארים זמן שבו המרחק מתל אביב אינו משתנה.",explanation:"במחנה הראשון המשאית עצרה בין שעה 2 לשעה 3, כלומר שעה אחת. במחנה השני היא עצרה בין שעה 4 לשעה 9, כלומר 5 שעות."},
+          {id:"q9_b",label:"ב",prompt:"מהו המרחק בין המחנה הראשון ובין המחנה השני?",type:"number",unit:"ק״מ",expected:40,tolerance:0,hint:"קראו את המרחק מתל אביב בכל אחד משני המחנות וחסרו.",explanation:"המחנה הראשון נמצא 100 ק״מ מתל אביב והמחנה השני 140 ק״מ מתל אביב. לכן המרחק ביניהם הוא 140 − 100 = 40 ק״מ."},
+          {id:"q9_c",label:"ג",prompt:"מה הייתה מהירות המשאית בנסיעתה הראשונה למחנה הראשון?",type:"number",unit:"קמ״ש",expected:50,tolerance:0,hint:"המשאית עוברת 100 ק״מ במשך 2 שעות.",explanation:"המשאית עברה 100 ק״מ ב-2 שעות. לכן המהירות היא 100 ÷ 2 = 50 קמ״ש."},
+          {id:"q9_d",label:"ד",prompt:"מה הייתה מהירות המשאית בדרך חזרה מן המחנה השני לתל אביב?",type:"number",unit:"קמ״ש",expected:70,tolerance:0,hint:"בדרך חזרה המשאית עוברת 140 ק״מ בין שעה 9 לשעה 11.",explanation:"הדרך חזרה אורכת 2 שעות, ובה המשאית עוברת 140 ק״מ. לכן המהירות היא 140 ÷ 2 = 70 קמ״ש."},
+          {id:"q9_e",label:"ה",prompt:"מהו אורך כל הדרך שעברה המשאית מרגע יציאתה ועד רגע חזרתה?",type:"number",unit:"ק״מ",expected:280,tolerance:0,hint:"חברו את המרחק מתל אביב למחנה הראשון, את הדרך מהמחנה הראשון לשני ואת הדרך חזרה לתל אביב.",explanation:"המשאית נסעה 100 ק״מ למחנה הראשון, עוד 40 ק״מ למחנה השני, ואז 140 ק״מ בחזרה לתל אביב. לכן אורך הדרך הכולל הוא 100 + 40 + 140 = 280 ק״מ."},
+          {id:"q9_f",label:"ו",prompt:"לאחר כמה זמן מרגע היציאה מתל אביב הגיעה המשאית למחנה השני?",type:"number",unit:"שעות",expected:4,tolerance:0,hint:"חפשו את תחילת הקטע האופקי בגובה 140 ק״מ.",explanation:"המשאית הגיעה למחנה השני 4 שעות לאחר היציאה."},
+          {id:"q9_g",label:"ז",prompt:"כמה זמן נמשכה הדרך חזרה מהמחנה השני לתל אביב?",type:"number",unit:"שעות",expected:2,tolerance:0,hint:"הדרך חזרה מתחילה בסוף העצירה במחנה השני ומסתיימת כשהמרחק חוזר ל-0.",explanation:"המשאית יצאה מן המחנה השני לאחר 9 שעות וחזרה לתל אביב לאחר 11 שעות. לכן הדרך חזרה נמשכה 11 − 9 = 2 שעות."}
+        ]
+      },
+      {
+        id:"q10_pool",
+        title:"כמות המים במכל לאורך זמן",
+        category:"גרף כמות–זמן / שינוי בקצב הזרימה",
+        story:"הגרף מתאר את כמות המים במכל לפי הזמן שחלף מתחילת זרימת המים.",
+        graph:{type:'line',xLabel:"הזמן בדקות",yLabel:"כמות המים בליטרים",xMin:0,xMax:38,xStep:2,yMin:0,yMax:400,yStep:20,readStep:0.25,fill:false,points:[{x:0,y:0},{x:4,y:100},{x:8,y:100},{x:14,y:280},{x:16,y:280},{x:21,y:380},{x:26,y:300},{x:30,y:300},{x:32,y:360},{x:38,y:240}]},
+        subQuestions:[
+          {id:"q10_a",label:"א",prompt:"כמה מים היו במכל כעבור 12 דקות מתחילת זרימת המים?",type:"number",unit:"ליטר",expected:220,tolerance:0,hint:"מצאו את הדקה 12 על ציר הזמן ועלו עד הגרף.",explanation:"בין הדקה 8 לדקה 14 הכמות עולה מ-100 ל-280 ליטר, כלומר 30 ליטר בכל דקה. לאחר 4 דקות נוספו 120 ליטר, ולכן בדקה 12 היו 100 + 120 = 220 ליטר."},
+          {id:"q10_b",label:"ב",prompt:"באילו זמנים הייתה במכל בדיוק 360 ליטר מים? הוסיפו זמן נוסף בכל פעם שאתם מוצאים פתרון נוסף.",type:"multi_values",unit:"דקות",step:0.25,expected:[20,22.25,32],tolerance:0.25,hint:"עברו בגובה 360 ליטר וחפשו את כל נקודות החיתוך עם הגרף.",explanation:"הגרף נמצא בגובה 360 ליטר בשלושה זמנים: בדקה 20, בערך בדקה 22.25, ובדקה 32."},
+          {id:"q10_c",label:"ג",prompt:"מה הייתה הכמות הגדולה ביותר במכל?",type:"number",unit:"ליטר",expected:380,tolerance:0,hint:"חפשו את הנקודה הגבוהה ביותר בגרף.",explanation:"הנקודה הגבוהה ביותר בגרף היא 380 ליטר."},
+          {id:"q10_d",label:"ד",prompt:"האם בין הדקה 22 לדקה 24 כמות המים במכל גדלה או קטנה?",type:"radio",options:[{value:"up",label:"גדלה"},{value:"down",label:"קטנה"}],expected:"down",hint:"בדקו אם קו הגרף עולה או יורד בין שתי הדקות.",explanation:"בין הדקה 22 לדקה 24 הגרף יורד, ולכן כמות המים במכל קטנה."},
+          {id:"q10_e",label:"ה",prompt:"כמה מים הוזרמו למכל בין הדקה 10 לדקה 12?",type:"number",unit:"ליטר",expected:60,tolerance:0,hint:"קראו את הכמות בדקה 10 ובדקה 12 ומצאו את ההפרש.",explanation:"בקטע הזה הכמות גדלה בקצב של 30 ליטר לדקה. במשך 2 דקות נוספו 30 × 2 = 60 ליטר."},
+          {id:"q10_f",label:"ו",prompt:"באילו זמנים לא היה שינוי בכמות המים במכל? הוסיפו תקופה נוספת בכל פעם שאתם מוצאים קטע אופקי נוסף.",type:"multi_ranges",unit:"דקות",step:1,expected:[[4,8],[14,16],[26,30]],tolerance:0,hint:"חפשו את כל הקטעים האופקיים בגרף.",explanation:"לא היה שינוי בכמות המים בין הדקות 4–8, 14–16 ו-26–30."}
+        ]
+      }
+    ];
+
+    // Response state dictionary
+    const studentResponses = {};
+    let currentQuestionIndex = 0;
+    let chartInstance = null;
+    let graphReadPoint = null;
+  </script>
+
+  <script>
+    /**
+     * Initializes the entire application
+     */
+    function initApp() {
+      // Calculate total sub-questions
+      let totalSubs = 0;
+      questionsDatabase.forEach(q => {
+        totalSubs += q.subQuestions.length;
+      });
+      document.getElementById('globalTotalCount').innerText = totalSubs;
+
+      renderNavPills();
+      loadQuestion(0);
+    }
+
+    /**
+     * Renders question navigation stepper tabs
+     */
+    function renderNavPills() {
+      const container = document.getElementById('questionsNavPills');
+      container.innerHTML = '';
+
+      questionsDatabase.forEach((q, idx) => {
+        const isCurrent = idx === currentQuestionIndex;
+        
+        // Calculate solved count for this question
+        const total = q.subQuestions.length;
+        const solved = q.subQuestions.filter(sq => studentResponses[`${q.id}_${sq.id}`]?.isCorrect).length;
+        const isFullySolved = solved === total && total > 0;
+
+        const pill = document.createElement('button');
+        pill.onclick = () => loadQuestion(idx);
+        pill.className = `flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+          isCurrent 
+            ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300'
+            : isFullySolved
+              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+              : 'bg-white text-slate-700 hover:bg-slate-200/70 border border-slate-200'
+        }`;
+
+        pill.innerHTML = `
+          <span>שאלה ${idx + 1}</span>
+          ${isFullySolved ? '<span class="text-emerald-500 font-black">✓</span>' : `<span class="opacity-60 text-[10px]">(${solved}/${total})</span>`}
+        `;
+        container.appendChild(pill);
+      });
+
+      document.getElementById('prevQuestionBtn').disabled = currentQuestionIndex === 0;
+      document.getElementById('nextQuestionBtn').disabled = currentQuestionIndex === questionsDatabase.length - 1;
+    }
+
+    /**
+     * Switch questions with next/prev buttons
+     */
+    function navigateQuestion(step) {
+      const newIndex = currentQuestionIndex + step;
+      if (newIndex >= 0 && newIndex < questionsDatabase.length) {
+        loadQuestion(newIndex);
+      }
+    }
+
+    /**
+     * Loads selected question
+     */
+    function loadQuestion(index) {
+      currentQuestionIndex = index;
+      const q = questionsDatabase[index];
+
+      // Update headers and text
+      document.getElementById('qBadgeNumber').innerText = `שאלה ${index + 1} מתוך ${questionsDatabase.length}`;
+      document.getElementById('qCategoryBadge').innerText = q.category;
+      document.getElementById('qTitle').innerText = q.title.replace(/^\s*\d+\s*[.\-:]\s*/, '');
+      document.getElementById('qStory').innerHTML = formatMixedHtml(q.story);
+
+      // Update axis descriptions
+      document.getElementById('xAxisDescription').innerText = `ציר X: ${q.graph.xLabel}`;
+      document.getElementById('yAxisDescription').innerText = `ציר Y: ${q.graph.yLabel}`;
+      document.getElementById('chartTooltipIndicator').innerText = 'לחצו על הגרף כדי לקרוא ערכים';
+
+      // Render chart
+      renderChartForQuestion(q.graph);
+
+      // Render sub-question cards
+      renderSubQuestions(q);
+
+      // Render solution drawer
+      renderSolutionSteps(q);
+
+      // Hide solution modal upon loading question
+      document.getElementById('questionSolutionModal').classList.add('hidden');
+
+      renderNavPills();
+      updateGlobalScore();
+      updateSolutionAccess();
+    }
+
+    /**
+     * Renders responsive dynamic Chart.js
+     */
+    function formatGraphTime(value, graphConfig) {
+      let v = Number(value);
+      if (graphConfig.customTicksX) {
+        const exact = graphConfig.customTicksX.find(t => Math.abs(t.val - v) < 0.001);
+        if (exact) return exact.label;
+      }
+      if (graphConfig.timeFormatter || graphConfig.customTicksX) {
+        const wrapped = ((v % 24) + 24) % 24;
+        const hh = Math.floor(wrapped);
+        const mm = Math.round((wrapped - hh) * 60);
+        return `${hh}:${String(mm).padStart(2,'0')}`;
+      }
+      return Number(v.toFixed(2)).toString();
+    }
+
+    function interpolateGraphY(points, x) {
+      const sorted = [...points].sort((a,b)=>a.x-b.x);
+      for (let i=0; i<sorted.length-1; i++) {
+        const a=sorted[i], b=sorted[i+1];
+        if (x >= a.x - 1e-9 && x <= b.x + 1e-9) {
+          if (Math.abs(b.x-a.x) < 1e-9) return a.y;
+          const t=(x-a.x)/(b.x-a.x);
+          return a.y + t*(b.y-a.y);
+        }
+      }
+      return null;
+    }
+
+    const graphReadingPlugin = {
+      id: 'graphReadingPlugin',
+      afterDatasetsDraw(chart, args, pluginOptions) {
+        if (!graphReadPoint || pluginOptions?.enabled === false) return;
+        const {ctx, chartArea, scales} = chart;
+        const xPx = scales.x.getPixelForValue(graphReadPoint.x);
+        const yPx = scales.y.getPixelForValue(graphReadPoint.y);
+        if (xPx < chartArea.left || xPx > chartArea.right || yPx < chartArea.top || yPx > chartArea.bottom) return;
+        ctx.save();
+        ctx.strokeStyle = '#f2941f';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6,5]);
+        ctx.beginPath(); ctx.moveTo(xPx,yPx); ctx.lineTo(xPx,chartArea.bottom); ctx.stroke();
+        if (pluginOptions?.showY !== false) {
+          ctx.beginPath(); ctx.moveTo(xPx,yPx); ctx.lineTo(chartArea.left,yPx); ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#f2941f';
+        ctx.beginPath(); ctx.arc(xPx,yPx,5,0,Math.PI*2); ctx.fill();
+
+        const xText = graphReadPoint.xLabel;
+        const yText = Number(graphReadPoint.y.toFixed(2)).toString();
+        ctx.font = '700 12px Rubik, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline='top';
+        const xW = ctx.measureText(xText).width + 12;
+        ctx.fillStyle = '#fff7ed'; ctx.strokeStyle='#f2941f'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.roundRect(xPx-xW/2, chartArea.bottom+4, xW, 22, 6); ctx.fill(); ctx.stroke();
+        ctx.fillStyle='#9a4d00'; ctx.fillText(xText, xPx, chartArea.bottom+8);
+
+        if (pluginOptions?.showY !== false) {
+          ctx.textAlign='right'; ctx.textBaseline='middle';
+          const yW = ctx.measureText(yText).width + 12;
+          ctx.fillStyle='#fff7ed'; ctx.strokeStyle='#f2941f';
+          ctx.beginPath(); ctx.roundRect(chartArea.left-yW-5, yPx-11, yW, 22, 6); ctx.fill(); ctx.stroke();
+          ctx.fillStyle='#9a4d00'; ctx.fillText(yText, chartArea.left-11, yPx);
+        }
+        ctx.restore();
+      }
+    };
+
+    function renderChartForQuestion(graphConfig) {
+      const canvas = document.getElementById('activeGraphCanvas');
+      const ctx = canvas.getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      graphReadPoint = null;
+      document.getElementById('chartTooltipIndicator').innerText = graphConfig.type === 'scatter'
+        ? 'הנקודות ממוספרות; אין מידע נסתר במעבר עכבר'
+        : 'לחצו על הגרף כדי לקרוא ערכים';
+
+      if (graphConfig.type === 'multi_line') {
+        const datasets=graphConfig.datasets.map((ds,i)=>({
+          label:ds.label,data:ds.points,borderColor:ds.color||['#111827','#475569','#2563eb'][i%3],backgroundColor:'transparent',borderWidth:3,tension:0,fill:false,pointRadius:0,pointHoverRadius:0,pointHitRadius:0
+        }));
+        chartInstance=new Chart(ctx,{
+          type:'line',plugins:[graphReadingPlugin],data:{datasets},
+          options:{responsive:true,maintainAspectRatio:false,parsing:false,
+            plugins:{legend:{display:true,position:'top',labels:{font:{family:'Rubik',size:12,weight:'bold'},usePointStyle:true}},tooltip:{enabled:false},graphReadingPlugin:{enabled:true}},
+            scales:{
+              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.xStep||1,font:{family:'Rubik',size:11},callback:(v)=>graphConfig.timeFormatter?formatGraphTime(v,{timeFormatter:true}):v},grid:{color:'#cbd5e1',lineWidth:1}},
+              y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{stepSize:graphConfig.yStep,font:{family:'Rubik',size:10}},grid:{color:'#cbd5e1',lineWidth:1}}
+            },
+            onClick:(evt)=>{
+              const step=graphConfig.readStep||0.5;
+              let xVal=chartInstance.scales.x.getValueForPixel(evt.x); xVal=Math.round(xVal/step)*step; xVal=Math.max(graphConfig.xMin,Math.min(graphConfig.xMax,xVal));
+              const clickedY=chartInstance.scales.y.getValueForPixel(evt.y);
+              const candidates=graphConfig.datasets.map(ds=>({ds,y:interpolateGraphY(ds.points,xVal)})).filter(c=>c.y!=null);
+              if(!candidates.length)return;
+              candidates.sort((a,b)=>Math.abs(a.y-clickedY)-Math.abs(b.y-clickedY));
+              const c=candidates[0];
+              graphReadPoint={x:xVal,y:c.y,xLabel:graphConfig.timeFormatter?formatGraphTime(xVal,{timeFormatter:true}):Number(xVal.toFixed(2)).toString()};
+              document.getElementById('chartTooltipIndicator').innerText=`${c.ds.label}: ${graphReadPoint.xLabel} | ${Number(c.y.toFixed(2))}`;
+              chartInstance.draw();
+            }
+          }
+        });
+        return;
+      }
+
+      if (graphConfig.type === 'schedule') {
+        document.getElementById('chartTooltipIndicator').innerText = 'לחצו על הגרף כדי לקרוא את השעה';
+        const datasets = graphConfig.trains.map(tr => ({
+          label: tr.label,
+          data: tr.points,
+          borderColor: '#111827',
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          tension: 0,
+          fill: false,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          pointHitRadius: 0
+        }));
+        chartInstance = new Chart(ctx, {
+          type:'line',
+          plugins:[graphReadingPlugin],
+          data:{datasets},
+          options:{
+            responsive:true, maintainAspectRatio:false,
+            parsing:false,
+            plugins:{legend:{display:false},tooltip:{enabled:false},graphReadingPlugin:{enabled:true,showY:false}},
+            scales:{
+              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+                 ticks:{stepSize:0.5,font:{family:'Rubik',size:11},callback:(v)=>formatGraphTime(v,{timeFormatter:true})},
+                 grid:{color:'#cbd5e1',lineWidth:1}},
+              y:{min:0,max:3,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+                 ticks:{stepSize:1,font:{family:'Rubik',size:11},callback:(v)=>graphConfig.stationLabels[v] ?? ''},
+                 grid:{color:'#cbd5e1',lineWidth:1}}
+            },
+            onClick:(evt)=>{
+              let xVal=chartInstance.scales.x.getValueForPixel(evt.x);
+              xVal=Math.round(xVal*12)/12; // חמש דקות
+              xVal=Math.max(graphConfig.xMin,Math.min(graphConfig.xMax,xVal));
+              let yVal=chartInstance.scales.y.getValueForPixel(evt.y);
+              yVal=Math.max(0,Math.min(3,yVal));
+              graphReadPoint={x:xVal,y:yVal,xLabel:formatGraphTime(xVal,{timeFormatter:true})};
+              document.getElementById('chartTooltipIndicator').innerText=graphReadPoint.xLabel;
+              chartInstance.draw();
+            }
+          }
+        });
+        return;
+      }
+
+
+      if (graphConfig.type === 'medicine') {
+        document.getElementById('chartTooltipIndicator').innerText = 'לחצו על הגרף כדי לקרוא את השעה';
+        const thresholdPlugin = {
+          id:'medicineThresholds',
+          afterDraw(chart){
+            const {ctx,chartArea,scales}=chart;
+            const lines=[
+              {y:graphConfig.toxicityThreshold,label:'סף רעילות'},
+              {y:graphConfig.efficacyThreshold,label:'סף יעילות'}
+            ];
+            ctx.save();
+            ctx.font='700 12px Rubik, sans-serif';
+            ctx.textAlign='left'; ctx.textBaseline='middle';
+            lines.forEach(item=>{
+              const py=scales.y.getPixelForValue(item.y);
+              ctx.strokeStyle='#64748b'; ctx.lineWidth=1.5; ctx.setLineDash([3,5]);
+              ctx.beginPath(); ctx.moveTo(chartArea.left,py); ctx.lineTo(chartArea.right,py); ctx.stroke();
+              ctx.setLineDash([]);
+              const tx=chartArea.left+8;
+              const metrics=ctx.measureText(item.label);
+              const boxW=metrics.width+12, boxH=22;
+              ctx.fillStyle='rgba(255,255,255,.92)';
+              ctx.fillRect(tx-4,py-boxH/2,boxW,boxH);
+              ctx.fillStyle='#334155';
+              ctx.fillText(item.label,tx+2,py);
+            });
+            ctx.restore();
+          }
+        };
+        chartInstance=new Chart(ctx,{
+          type:'line',
+          plugins:[graphReadingPlugin,thresholdPlugin],
+          data:{datasets:[{
+            data:graphConfig.points,borderColor:'#1e3a8a',backgroundColor:'transparent',borderWidth:3,
+            tension:.38,fill:false,pointRadius:0,pointHoverRadius:0,pointHitRadius:0
+          }]},
+          options:{
+            responsive:true,maintainAspectRatio:false,parsing:false,
+            plugins:{legend:{display:false},tooltip:{enabled:false},graphReadingPlugin:{enabled:true,showY:false}},
+            scales:{
+              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+                 ticks:{stepSize:1,font:{family:'Rubik',size:11},callback:(v)=>[1,4,7,10,13,16].includes(Number(v))?formatGraphTime(v,{timeFormatter:true}):''},
+                 grid:{color:'#e2e8f0',lineWidth:1}},
+              y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+                 ticks:{display:false},grid:{display:false}}
+            },
+            onClick:(evt)=>{
+              let xVal=chartInstance.scales.x.getValueForPixel(evt.x);
+              xVal=Math.round(xVal*2)/2;
+              xVal=Math.max(graphConfig.xMin,Math.min(graphConfig.xMax,xVal));
+              const yVal=interpolateGraphY(graphConfig.points,xVal);
+              if(yVal==null)return;
+              graphReadPoint={x:xVal,y:yVal,xLabel:formatGraphTime(xVal,{timeFormatter:true})};
+              document.getElementById('chartTooltipIndicator').innerText=graphReadPoint.xLabel;
+              chartInstance.draw();
+            }
+          }
+        });
+        return;
+      }
+
+      if (graphConfig.type === 'sunlight') {
+        document.getElementById('chartTooltipIndicator').innerText = 'לחצו על הגרף כדי לקרוא חודש ושעה';
+        chartInstance=new Chart(ctx,{
+          type:'scatter',
+          plugins:[graphReadingPlugin],
+          data:{datasets:[
+            {label:'שקיעה',data:graphConfig.sunset,showLine:false,pointRadius:4,pointHoverRadius:4,pointBackgroundColor:'#d946ef',pointBorderWidth:0},
+            {label:'זריחה',data:graphConfig.sunrise,showLine:false,pointRadius:4,pointHoverRadius:4,pointBackgroundColor:'#1e3a8a',pointBorderWidth:0}
+          ]},
+          options:{
+            responsive:true,maintainAspectRatio:false,parsing:false,
+            plugins:{
+              legend:{display:true,position:'top',labels:{font:{family:'Rubik',size:12,weight:'bold'},usePointStyle:true}},
+              tooltip:{enabled:false},
+              graphReadingPlugin:{enabled:true,showY:true}
+            },
+            scales:{
+              x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+                 ticks:{stepSize:1,font:{family:'Rubik',size:10}},grid:{color:'#cbd5e1',lineWidth:1}},
+              y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+                 ticks:{stepSize:2,font:{family:'Rubik',size:10},callback:(v)=>Number(v).toFixed(2)},grid:{color:'#cbd5e1',lineWidth:1}}
+            },
+            onClick:(evt)=>{
+              let xVal=chartInstance.scales.x.getValueForPixel(evt.x);
+              xVal=Math.round(xVal); xVal=Math.max(0,Math.min(24,xVal));
+              let yVal=chartInstance.scales.y.getValueForPixel(evt.y);
+              yVal=Math.round(yVal*4)/4; yVal=Math.max(0,Math.min(20,yVal));
+              graphReadPoint={x:xVal,y:yVal,xLabel:`חודש ${xVal}`,yLabel:formatGraphTime(yVal,{timeFormatter:true})};
+              document.getElementById('chartTooltipIndicator').innerText=`חודש ${xVal} • ${formatGraphTime(yVal,{timeFormatter:true})}`;
+              chartInstance.draw();
+            }
+          }
+        });
+        return;
+      }
+
+      if (graphConfig.type === 'scatter') {
+        chartInstance = new Chart(ctx, {
+          type:'scatter',
+          plugins:[graphReadingPlugin],
+          data:{datasets:[{
+            label:'כרטיסי נסיעה', data:graphConfig.points,
+            backgroundColor:'#2563eb', borderColor:'#1d4ed8', pointRadius:10, pointHoverRadius:10
+          }]},
+          options:{
+            responsive:true, maintainAspectRatio:false,
+            plugins:{legend:{display:false},tooltip:{enabled:false},graphReadingPlugin:{enabled:false}},
+            scales:{
+              x:{min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{display:!graphConfig.hideTickValues},grid:{color:'#e2e8f0',lineWidth:1}},
+              y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},ticks:{display:!graphConfig.hideTickValues},grid:{color:'#e2e8f0',lineWidth:1}}
+            },
+            animation:{onComplete:function(){
+              const chartCtx=this.ctx; chartCtx.font='bold 12px Rubik, sans-serif'; chartCtx.fillStyle='#fff'; chartCtx.textAlign='center'; chartCtx.textBaseline='middle';
+              const meta=this.getDatasetMeta(0); meta.data.forEach((element,index)=>chartCtx.fillText(graphConfig.points[index].label,element.x,element.y));
+            }}
+          }
+        });
+        return;
+      }
+
+      const readStep = graphConfig.readStep || 0.5;
+      chartInstance = new Chart(ctx, {
+        type:'line',
+        plugins:[graphReadingPlugin],
+        data:{datasets:[{
+          label:graphConfig.yLabel, data:graphConfig.points,
+          borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.06)', borderWidth:3,
+          tension:graphConfig.tension || 0, fill:graphConfig.fill !== false,
+          pointRadius:0, pointHoverRadius:0, pointHitRadius:0
+        }]},
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          interaction:{mode:'nearest',intersect:false},
+          plugins:{legend:{display:false},tooltip:{enabled:false},graphReadingPlugin:{enabled:true}},
+          scales:{
+            x:{type:'linear',min:graphConfig.xMin,max:graphConfig.xMax,title:{display:true,text:graphConfig.xLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+              ticks:{stepSize:(graphConfig.xStep || readStep),font:{family:'Rubik',size:11},callback:function(val){
+                if (graphConfig.customTicksX) {
+                  const match=graphConfig.customTicksX.find(t=>Math.abs(t.val-val)<0.001); return match?match.label:'';
+                }
+                if (graphConfig.timeFormatter) return Math.abs(val-Math.round(val))<0.001 ? `${Math.round(val)}:00` : '';
+                return val;
+              }}, grid:{color:'#e2e8f0',lineWidth:1}},
+            y:{min:graphConfig.yMin,max:graphConfig.yMax,title:{display:true,text:graphConfig.yLabel,font:{family:'Rubik',size:12,weight:'bold'},color:'#334155'},
+              ticks:{stepSize:graphConfig.yStep,font:{family:'Rubik',size:11}},grid:{color:(c)=>c.tick.value===0?'#94a3b8':'#e2e8f0',lineWidth:(c)=>c.tick.value===0?1.5:1}}
+          },
+          onClick:(evt)=>{
+            const rect=canvas.getBoundingClientRect();
+            const xPixel=evt.x;
+            let xVal=chartInstance.scales.x.getValueForPixel(xPixel);
+            xVal=Math.round(xVal/readStep)*readStep;
+            xVal=Math.max(graphConfig.xMin,Math.min(graphConfig.xMax,xVal));
+            const yVal=interpolateGraphY(graphConfig.points,xVal);
+            if (yVal==null) return;
+            graphReadPoint={x:xVal,y:yVal,xLabel:formatGraphTime(xVal,graphConfig)};
+            document.getElementById('chartTooltipIndicator').innerText=`${graphReadPoint.xLabel}  |  ${Number(yVal.toFixed(2))}`;
+            chartInstance.draw();
+          }
+        }
+      });
+    }
+
+    function timeOptions(sq) {
+      const out=[];
+      const step=sq.timeStep || 0.5;
+      for(let v=sq.timeMin; v<=sq.timeMax+1e-9; v+=step){
+        const val=Number(v.toFixed(2));
+        const displayVal=sq.wrap24 ? ((val%24)+24)%24 : val;
+        const hh=Math.floor(displayVal), mm=Math.round((displayVal-hh)*60);
+        out.push({value:String(val),label:`${hh}:${String(mm).padStart(2,'0')}`});
+      }
+      return out;
+    }
+    function renderSingleTimeSelect(id,sq,selected='') {
+      return `<select id="${id}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold"><option value="">בחרו שעה...</option>${timeOptions(sq).map(o=>`<option value="${o.value}" ${String(selected)===o.value?'selected':''}>${o.label}</option>`).join('')}</select>`;
+    }
+    function renderTimeSelectRow(key,sq,value,index){
+      return `<div class="flex items-center gap-2 time-entry" data-index="${index}">${renderSingleTimeSelect(`time-${key}-${index}`,sq,value)}${index>0?`<button type="button" onclick="this.closest('.time-entry').remove()" class="text-slate-400 hover:text-rose-600 px-2" aria-label="הסר זמן">✕</button>`:''}</div>`;
+    }
+    function addTimeField(questionId,subId){
+      const q=questionsDatabase.find(x=>x.id===questionId), sq=q.subQuestions.find(x=>x.id===subId), key=`${questionId}_${subId}`;
+      const box=document.getElementById(`times-${key}`); const index=box.querySelectorAll('.time-entry').length;
+      const wrap=document.createElement('div'); wrap.innerHTML=renderTimeSelectRow(key,sq,'',index); box.appendChild(wrap.firstElementChild);
+    }
+
+    function renderValueRow(key,sq,value,index){
+      return `<div class="flex items-center gap-2 value-entry" data-index="${index}">
+        <input type="number" step="${sq.step || 'any'}" id="value-${key}-${index}" value="${value ?? ''}" placeholder="ערך" class="w-32 max-w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-center" />
+        <span class="text-xs text-slate-500">${sq.unit||''}</span>
+        ${index>0?`<button type="button" onclick="this.closest('.value-entry').remove()" class="text-slate-400 hover:text-rose-600 px-2" aria-label="הסר ערך">✕</button>`:''}
+      </div>`;
+    }
+    function addValueField(questionId,subId){
+      const q=questionsDatabase.find(x=>x.id===questionId), sq=q.subQuestions.find(x=>x.id===subId), key=`${questionId}_${subId}`;
+      const box=document.getElementById(`values-${key}`), index=box.querySelectorAll('.value-entry').length;
+      const wrap=document.createElement('div'); wrap.innerHTML=renderValueRow(key,sq,'',index); box.appendChild(wrap.firstElementChild);
+    }
+    function renderRangeRow(key,sq,value,index){
+      const v=Array.isArray(value)?value:['',''];
+      return `<div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto] gap-2 items-center range-entry" data-index="${index}">
+        <input type="number" step="${sq.step || 'any'}" value="${v[0] ?? ''}" placeholder="מ-" class="range-start w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-center" />
+        <span class="text-xs text-slate-500">עד</span>
+        <input type="number" step="${sq.step || 'any'}" value="${v[1] ?? ''}" placeholder="עד" class="range-end w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-center" />
+        ${index>0?`<button type="button" onclick="this.closest('.range-entry').remove()" class="text-slate-400 hover:text-rose-600 px-2" aria-label="הסר תקופה">✕</button>`:'<span></span>'}
+      </div>`;
+    }
+    function addRangeField(questionId,subId){
+      const q=questionsDatabase.find(x=>x.id===questionId), sq=q.subQuestions.find(x=>x.id===subId), key=`${questionId}_${subId}`;
+      const box=document.getElementById(`ranges-${key}`), index=box.querySelectorAll('.range-entry').length;
+      const wrap=document.createElement('div'); wrap.innerHTML=renderRangeRow(key,sq,['',''],index); box.appendChild(wrap.firstElementChild);
+    }
+
+    function monthOptions(selected='') {
+      let out='<option value="">בחרו חודש...</option>';
+      for(let m=1;m<=24;m++) out+=`<option value="${m}" ${String(selected)===String(m)?'selected':''}>חודש ${m}</option>`;
+      return out;
+    }
+    function daylightAtMonth(q,m){
+      const sr=q.graph.sunrise.find(p=>p.x===Number(m));
+      const ss=q.graph.sunset.find(p=>p.x===Number(m));
+      return sr&&ss ? ss.y-sr.y : null;
+    }
+
+    /**
+     * Renders subquestion cards with inputs and hints
+     */
+    function renderSubQuestions(question) {
+      const container = document.getElementById('subQuestionsContainer');
+      container.innerHTML = '';
+
+      question.subQuestions.forEach((sq) => {
+        const key = `${question.id}_${sq.id}`;
+        const prevAnswer = studentResponses[key];
+
+        const card = document.createElement('div');
+        card.className = `bg-white border rounded-2xl p-4 sm:p-5 shadow-xs transition duration-200 ${
+          prevAnswer?.isCorrect ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200'
+        }`;
+        card.id = `card-${key}`;
+
+        let inputHtml = '';
+
+        if (sq.type === 'time_and_number') {
+          const prev=prevAnswer?.value || {};
+          inputHtml=`
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <label class="block text-xs font-medium text-slate-700 mb-1">שעת הזריקה הראשונה:</label>
+                ${renderSingleTimeSelect(`time-${key}`,sq,prev.time ?? '')}
+              </div>
+              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <label class="block text-xs font-medium text-slate-700 mb-1">כל כמה שעות מזריקים:</label>
+                <div class="flex items-center gap-2">
+                  <input type="number" step="1" id="number-${key}" value="${prev.number ?? ''}" placeholder="מספר" class="w-24 bg-white border border-slate-300 rounded-lg px-2 py-2 text-sm font-bold text-center text-slate-800" />
+                  <span class="text-xs text-slate-500">${sq.numberUnit||''}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 mt-3">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button>
+            </div>`;
+        } else if (sq.type === 'number') {
+          inputHtml = `
+            <div class="flex flex-wrap items-center gap-2 mt-3">
+              <div class="relative flex items-center">
+                <input 
+                  type="number" 
+                  step="any" 
+                  id="input-${key}" 
+                  value="${prevAnswer?.value ?? ''}" 
+                  placeholder="הקלידו מספר"
+                  class="w-36 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white text-center font-bold text-slate-800"
+                />
+                ${sq.unit ? `<span class="mr-2 text-xs font-semibold text-slate-500">${sq.unit}</span>` : ''}
+              </div>
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">
+                בדיקה
+              </button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">
+                💡 רמז
+              </button>
+            </div>
+          `;
+        } else if (sq.type === 'multi_input') {
+          // Multiple numerical inputs in one question (e.g. stops and durations)
+          const vals = prevAnswer?.value || {};
+          inputHtml = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              ${sq.fields.map(f => `
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <label class="block text-xs font-medium text-slate-700 mb-1">${f.label}</label>
+                  <div class="flex items-center gap-2">
+                    ${f.type === 'time'
+                      ? renderSingleTimeSelect(`input-${key}-${f.key}`, f, vals[f.key] ?? '')
+                      : `<input 
+                          type="number" 
+                          step="any" 
+                          id="input-${key}-${f.key}" 
+                          value="${vals[f.key] ?? ''}" 
+                          placeholder="ערך"
+                          class="w-24 bg-white border border-slate-300 rounded-lg px-2 py-1 text-sm font-bold text-center text-slate-800"
+                        />`
+                    }
+                    ${f.type === 'time' ? '' : `<span class="text-xs text-slate-500">${f.unit || ''}</span>`}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex items-center gap-2 mt-3">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">
+                בדיקה
+              </button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">
+                💡 רמז
+              </button>
+            </div>
+          `;
+        } else if (sq.type === 'checkbox') {
+          const checkedValues = prevAnswer?.value || [];
+          inputHtml = `
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 my-3 text-xs">
+              ${sq.options.map(opt => `
+                <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer font-medium select-none">
+                  <input type="checkbox" name="cb-${key}" value="${opt.value}" ${checkedValues.includes(opt.value) ? 'checked' : ''} class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                  <span>${formatMixedHtml(opt.label)}</span>
+                </label>
+              `).join('')}
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">
+                בדיקה
+              </button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">
+                💡 רמז
+              </button>
+            </div>
+          `;
+        } else if (sq.type === 'multi_time') {
+          const saved = Array.isArray(prevAnswer?.value) && prevAnswer.value.length ? prevAnswer.value : [''];
+          inputHtml = `
+            <div id="times-${key}" class="space-y-2 my-3">
+              ${saved.map((v,i)=>renderTimeSelectRow(key, sq, v, i)).join('')}
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="addTimeField('${question.id}','${sq.id}')" class="bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 font-medium text-xs px-3 py-2 rounded-xl transition">+ הוסיפו זמן נוסף</button>
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button>
+            </div>`;
+        } else if (sq.type === 'time_range') {
+          const vals = Array.isArray(prevAnswer?.value) ? prevAnswer.value : ['', ''];
+          inputHtml = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">משעה</label>${renderSingleTimeSelect(`range-start-${key}`, sq, vals[0]||'')}</div>
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">עד שעה</label>${renderSingleTimeSelect(`range-end-${key}`, sq, vals[1]||'')}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button>
+            </div>`;
+        } else if (sq.type === 'relative_pair') {
+          const vals = prevAnswer?.value || {};
+          inputHtml = `
+            <div class="grid grid-cols-1 gap-3 my-3">
+              ${sq.fields.map(f=>`<div><label class="block text-xs font-medium text-slate-700 mb-1">${f.label}</label><select id="input-${key}-${f.key}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold">${f.options.map(o=>`<option value="${o.value}" ${vals[f.key]===o.value?'selected':''}>${o.label}</option>`).join('')}</select></div>`).join('')}
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button>
+            </div>`;
+        } else if (sq.type === 'single_time') {
+          const selected = prevAnswer?.value ?? '';
+          inputHtml = `
+            <div class="my-3 max-w-xs">${renderSingleTimeSelect(`single-${key}`, sq, selected)}</div>
+            <div class="flex items-center gap-2">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button>
+            </div>`;
+        } else if (sq.type === 'train_classify') {
+          const vals = prevAnswer?.value || {};
+          inputHtml = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 my-3">
+              ${sq.trains.map(tr=>`<div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5"><div class="text-xs font-bold text-slate-700 mb-1">${tr.label}</div><select id="input-${key}-${tr.key}" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-sm"><option value="">בחרו</option><option value="direct" ${vals[tr.key]==='direct'?'selected':''}>ישירה</option><option value="local" ${vals[tr.key]==='local'?'selected':''}>מאספת</option></select></div>`).join('')}
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button>
+            </div>`;
+        } else if (sq.type === 'month_select') {
+          const selected=prevAnswer?.value ?? '';
+          inputHtml=`
+            <div class="my-3 max-w-xs"><select id="month-${key}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold">${monthOptions(selected)}</select></div>
+            <div class="flex items-center gap-2">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button>
+            </div>`;
+        } else if (sq.type === 'two_months_daylight') {
+          const vals=Array.isArray(prevAnswer?.value)?prevAnswer.value:['',''];
+          inputHtml=`
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">חודש ראשון</label><select id="month1-${key}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold">${monthOptions(vals[0]||'')}</select></div>
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">חודש שני</label><select id="month2-${key}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold">${monthOptions(vals[1]||'')}</select></div>
+            </div>
+            <div class="flex items-center gap-2"><button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button><button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button></div>`;
+        } else if (sq.type === 'month_range_growth') {
+          const vals=Array.isArray(prevAnswer?.value)?prevAnswer.value:['',''];
+          inputHtml=`
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">מתחילת חודש</label><select id="month-start-${key}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold">${monthOptions(vals[0]||'')}</select></div>
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">עד תחילת חודש</label><select id="month-end-${key}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold">${monthOptions(vals[1]||'')}</select></div>
+            </div>
+            <div class="flex items-center gap-2"><button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">בדיקה</button><button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">💡 רמז</button></div>`;
+        } else if (sq.type === 'month_select') {
+        const el=document.getElementById(`month-${key}`);
+        if(!el || !el.value){showQuickToast(key,'בחרו חודש.');return;}
+        userVal=parseInt(el.value,10);
+        const exp=Array.isArray(sq.expected)?sq.expected:[sq.expected];
+        isCorrect=exp.map(Number).includes(userVal);
+        feedbackMsg=isCorrect?`נכון מאוד! ${sq.explanation}`:'החודש שבחרתם אינו מתאים. בדקו שוב את הגרף.';
+      } else if (sq.type === 'two_months_daylight') {
+        const a=document.getElementById(`month1-${key}`)?.value,b=document.getElementById(`month2-${key}`)?.value;
+        if(!a||!b){showQuickToast(key,'בחרו שני חודשים.');return;}
+        userVal=[Number(a),Number(b)];
+        const d1=daylightAtMonth(q,a), d2=daylightAtMonth(q,b);
+        isCorrect=Number(a)!==Number(b) && d1>12 && d2>12;
+        feedbackMsg=isCorrect?`נכון! בשני החודשים שבחרתם יש יותר מ-12 שעות אור. ${sq.explanation}`:'לפחות אחד מהחודשים אינו מתאים, או שבחרתם אותו חודש פעמיים. בדקו שההפרש בין השקיעה לזריחה גדול מ-12 שעות.';
+      } else if (sq.type === 'month_range_growth') {
+        const a=document.getElementById(`month-start-${key}`)?.value,b=document.getElementById(`month-end-${key}`)?.value;
+        if(!a||!b){showQuickToast(key,'בחרו חודש התחלה וחודש סיום.');return;}
+        const ma=Number(a), mb=Number(b); userVal=[ma,mb];
+        if(mb<=ma){isCorrect=false;} else {
+          const da=daylightAtMonth(q,ma), db=daylightAtMonth(q,mb);
+          isCorrect=da!=null&&db!=null&&db>da;
+        }
+        feedbackMsg=isCorrect?`נכון! אורך היום בתחילת התקופה קטן מאורכו בסוף התקופה. ${sq.explanation}`:'התקופה שבחרתם אינה מציגה התארכות של היום. בדקו שההפרש בין השקיעה לזריחה גדל.';
+        } else if (sq.type === 'choice_number') {
+          const prev=prevAnswer?.value || {};
+          inputHtml=`
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-3">
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">בחרו</label><select id="choice-${key}" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold"><option value="">בחרו...</option>${sq.choices.map(o=>`<option value="${o.value}" ${prev.choice===o.value?'selected':''}>${o.label}</option>`).join('')}</select></div>
+              <div><label class="block text-xs font-medium text-slate-700 mb-1">בכמה?</label><div class="flex items-center gap-2"><input id="choice-number-${key}" type="number" step="any" value="${prev.number ?? ''}" class="w-32 bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-center"/><span class="text-xs text-slate-500">${sq.unit||''}</span></div></div>
+            </div>
+            <div class="flex items-center gap-2"><button onclick="checkSubQuestion('${question.id}','${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl">בדיקה</button><button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl font-medium">💡 רמז</button></div>`;
+        } else if (sq.type === 'multi_values') {
+          const saved=Array.isArray(prevAnswer?.value)&&prevAnswer.value.length?prevAnswer.value:[''];
+          inputHtml=`<div id="values-${key}" class="space-y-2 my-3">${saved.map((v,i)=>renderValueRow(key,sq,v,i)).join('')}</div>
+            <div class="flex flex-wrap items-center gap-2"><button type="button" onclick="addValueField('${question.id}','${sq.id}')" class="bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 font-medium text-xs px-3 py-2 rounded-xl">+ הוסיפו זמן נוסף</button><button onclick="checkSubQuestion('${question.id}','${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl">בדיקה</button><button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl font-medium">💡 רמז</button></div>`;
+        } else if (sq.type === 'multi_ranges') {
+          const saved=Array.isArray(prevAnswer?.value)&&prevAnswer.value.length?prevAnswer.value:[['','']];
+          inputHtml=`<div id="ranges-${key}" class="space-y-2 my-3">${saved.map((v,i)=>renderRangeRow(key,sq,v,i)).join('')}</div>
+            <div class="flex flex-wrap items-center gap-2"><button type="button" onclick="addRangeField('${question.id}','${sq.id}')" class="bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 font-medium text-xs px-3 py-2 rounded-xl">+ הוסיפו תקופה נוספת</button><button onclick="checkSubQuestion('${question.id}','${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl">בדיקה</button><button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl font-medium">💡 רמז</button></div>`;
+      } else if (sq.type === 'radio') {
+          const selectedVal = prevAnswer?.value || '';
+          inputHtml = `
+            <div class="space-y-2 my-3 text-xs sm:text-sm">
+              ${sq.options.map(opt => `
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer select-none">
+                  <input type="radio" name="rb-${key}" value="${opt.value}" ${selectedVal === opt.value ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500">
+                  <span class="font-medium text-slate-700">${formatMixedHtml(opt.label)}</span>
+                </label>
+              `).join('')}
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="checkSubQuestion('${question.id}', '${sq.id}')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-2.5 rounded-xl transition shadow-xs">
+                בדיקה
+              </button>
+              <button onclick="toggleHint('hint-${key}')" class="text-slate-500 hover:text-amber-600 text-xs px-2 py-2 rounded-xl transition font-medium">
+                💡 רמז
+              </button>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-start gap-2.5">
+              <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                ${sq.label}
+              </span>
+              <h4 class="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                ${formatMixedHtml(sq.prompt)}
+              </h4>
+            </div>
+            <span id="badge-${key}" class="text-[11px] font-bold px-2 py-0.5 rounded-md ${
+              prevAnswer ? (prevAnswer.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800') : 'hidden'
+            }">
+              ${prevAnswer ? (prevAnswer.isCorrect ? '✓ נכון' : '✗ שגוי') : ''}
+            </span>
+          </div>
+
+          ${inputHtml}
+
+          <!-- Hint container -->
+          <div id="hint-${key}" class="sub-hint hidden mt-3 p-3 bg-amber-50 text-amber-900 rounded-xl text-xs border border-amber-200 leading-relaxed">
+            <strong>רמז:</strong> ${formatMixedHtml(sq.hint)}
+          </div>
+
+          <!-- Feedback message -->
+          <div id="feedback-${key}" class="${prevAnswer ? '' : 'hidden'} mt-3 text-xs p-3 rounded-xl border ${
+            prevAnswer?.isCorrect 
+              ? 'bg-emerald-50 text-emerald-900 border-emerald-200' 
+              : 'bg-rose-50 text-rose-900 border-rose-200'
+          }">
+            ${prevAnswer?.message || ''}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    /**
+     * Checks subquestion correctness and handles tolerances
+     */
+    function checkSubQuestion(questionId, subId) {
+      const q = questionsDatabase.find(item => item.id === questionId);
+      const sq = q.subQuestions.find(item => item.id === subId);
+      const key = `${questionId}_${subId}`;
+
+      let isCorrect = false;
+      let userVal = null;
+      let feedbackMsg = '';
+
+      if (sq.type === 'time_and_number') {
+        const timeEl=document.getElementById(`time-${key}`);
+        const numEl=document.getElementById(`number-${key}`);
+        const t=timeEl?.value || '';
+        const n=parseFloat(numEl?.value);
+        if(!t || isNaN(n)) { showQuickToast(key,'בחרו שעה ומלאו את מספר השעות.'); return; }
+        userVal={time:t,number:n};
+        isCorrect=String(t)===String(sq.expectedTime) && Math.abs(n-sq.expectedNumber)<1e-9;
+        feedbackMsg=isCorrect ? `נכון מאוד! ${sq.explanation}` : 'בדקו שוב את מועד העלייה הראשונה ואת המרווח בין העליות הכמעט אנכיות.';
+      } else if (sq.type === 'number') {
+        const inputElem = document.getElementById(`input-${key}`);
+        userVal = parseFloat(inputElem.value);
+
+        if (isNaN(userVal)) {
+          showQuickToast(key, 'אנא הקלידו ערך מספרי לבדיקה.');
+          return;
+        }
+
+        const diff = Math.abs(userVal - sq.expected);
+        if (diff <= (sq.tolerance || 0)) {
+          isCorrect = true;
+          feedbackMsg = `מדויק ונכון! ${sq.explanation}`;
+        } else {
+          isCorrect = false;
+          feedbackMsg = `תשובה לא נכונה. בדקו שוב את קריאת הערכים בציר או היעזרו ברמז.`;
+        }
+
+      } else if (sq.type === 'multi_input') {
+        userVal = {};
+        let allFilled = true;
+        let allMatch = true;
+
+        sq.fields.forEach(f => {
+          const raw = document.getElementById(`input-${key}-${f.key}`).value;
+          if (raw === '') {
+            allFilled = false;
+            userVal[f.key] = '';
+            allMatch = false;
+            return;
+          }
+          const val = parseFloat(raw);
+          userVal[f.key] = val;
+          if (isNaN(val) || Math.abs(val - f.expected) > (f.tolerance || 0)) {
+            allMatch = false;
+          }
+        });
+
+        if (!allFilled) {
+          showQuickToast(key, 'אנא מלאו את כל שדות הסעיף.');
+          return;
+        }
+
+        if (allMatch) {
+          isCorrect = true;
+          feedbackMsg = `מעולה! כל הערכים מדויקים. ${sq.explanation}`;
+        } else {
+          isCorrect = false;
+          feedbackMsg = `חלק מהערכים אינם נכונים. בדקו שוב את הגרף ואת הערכים שבחרתם.`;
+        }
+
+      } else if (sq.type === 'checkbox') {
+        const checked = Array.from(document.querySelectorAll(`input[name="cb-${key}"]:checked`)).map(cb => cb.value);
+        userVal = checked;
+
+        if (checked.length === 0) {
+          showQuickToast(key, 'אנא סמנו לפחות אפשרות אחת.');
+          return;
+        }
+
+        const sortedUser = [...checked].sort();
+        const sortedExp = [...sq.expected].sort();
+        const matches = JSON.stringify(sortedUser) === JSON.stringify(sortedExp);
+
+        if (matches) {
+          isCorrect = true;
+          feedbackMsg = `מצוין! סימנתם את כל השעות הנכונות. ${sq.explanation}`;
+        } else {
+          isCorrect = false;
+          feedbackMsg = `הבחירה אינה מלאה או מכילה שעה שאינה מתאימה. עיינו בקו האופקי בגרף.`;
+        }
+
+      } else if (sq.type === 'multi_time') {
+        const selects=Array.from(document.querySelectorAll(`#times-${key} select`));
+        userVal=selects.map(s=>s.value).filter(Boolean);
+        if (!userVal.length) { showQuickToast(key,'בחרו לפחות שעה אחת.'); return; }
+        const norm=a=>[...new Set(a.map(String))].sort((a,b)=>parseFloat(a)-parseFloat(b));
+        isCorrect=JSON.stringify(norm(userVal))===JSON.stringify(norm(sq.expected));
+        feedbackMsg=isCorrect ? `נכון מאוד! ${sq.explanation}` : 'עדיין לא. בדקו אם מצאתם את כל הזמנים המתאימים ורק אותם.';
+      } else if (sq.type === 'time_range') {
+        const a=document.getElementById(`range-start-${key}`).value, b=document.getElementById(`range-end-${key}`).value;
+        if(!a || !b){showQuickToast(key,'בחרו שעת התחלה ושעת סיום.');return;}
+        userVal=[a,b]; isCorrect=String(a)===String(sq.expected[0]) && String(b)===String(sq.expected[1]);
+        feedbackMsg=isCorrect ? `נכון מאוד! ${sq.explanation}` : 'עדיין לא. בדקו שוב את נקודות ההתחלה והסיום של הקטע בגרף.';
+      } else if (sq.type === 'relative_pair') {
+        userVal={}; let allFilled=true; let allMatch=true;
+        sq.fields.forEach(f=>{const v=document.getElementById(`input-${key}-${f.key}`).value; userVal[f.key]=v; if(!v)allFilled=false; if(v!==f.expected)allMatch=false;});
+        if(!allFilled){showQuickToast(key,'בחרו תשובה בשני השדות.');return;}
+        isCorrect=allMatch; feedbackMsg=isCorrect ? `נכון מאוד! ${sq.explanation}` : 'אחד מהיחסים עדיין אינו נכון. חשבו בנפרד מה קורה לזמן ומה קורה למחיר.';
+      } else if (sq.type === 'single_time') {
+        const el = document.getElementById(`single-${key}`);
+        if (!el || el.value === '') { showQuickToast(key, 'בחרו שעה.'); return; }
+        userVal = el.value;
+        isCorrect = Math.abs(parseFloat(userVal) - parseFloat(sq.expected)) < 0.001;
+        feedbackMsg = isCorrect ? `נכון מאוד! ${sq.explanation}` : 'השעה אינה מתאימה. עקבו שוב אחרי קו הרכבת בגרף.';
+      } else if (sq.type === 'train_classify') {
+        userVal = {}; let filled=true, all=true;
+        sq.trains.forEach(tr=>{
+          const el=document.getElementById(`input-${key}-${tr.key}`), val=el?.value || '';
+          userVal[tr.key]=val; if(!val) filled=false; if(val!==tr.expected) all=false;
+        });
+        if(!filled){showQuickToast(key,'יש לסווג את כל הרכבות.');return;}
+        isCorrect=all;
+        feedbackMsg=isCorrect?`נכון! ${sq.explanation}`:'לא כל הסיווגים נכונים. חפשו קטעים אופקיים בתחנות הביניים.';
+      } else if (sq.type === 'choice_number') {
+        const choice=document.getElementById(`choice-${key}`)?.value||'';
+        const n=parseFloat(document.getElementById(`choice-number-${key}`)?.value);
+        if(!choice || isNaN(n)){showQuickToast(key,'בחרו אפשרות והקלידו מספר.');return;}
+        userVal={choice,number:n};
+        isCorrect=choice===sq.expectedChoice && Math.abs(n-sq.expectedNumber)<=(sq.tolerance||0);
+        feedbackMsg=isCorrect?`נכון מאוד! ${sq.explanation}`:'אחד משני החלקים עדיין אינו נכון. בדקו שוב את שני הגרפים.';
+      } else if (sq.type === 'multi_values') {
+        const els=Array.from(document.querySelectorAll(`#values-${key} .value-entry input`));
+        userVal=els.map(e=>parseFloat(e.value)).filter(v=>!isNaN(v));
+        if(!userVal.length){showQuickToast(key,'הקלידו לפחות ערך אחד.');return;}
+        const a=[...userVal].sort((x,y)=>x-y), b=[...sq.expected].sort((x,y)=>x-y), tol=sq.tolerance||0;
+        isCorrect=a.length===b.length && a.every((v,i)=>Math.abs(v-b[i])<=tol);
+        feedbackMsg=isCorrect?`נכון מאוד! ${sq.explanation}`:'עדיין לא. בדקו אם מצאתם את כל הזמנים המתאימים ורק אותם.';
+      } else if (sq.type === 'multi_ranges') {
+        const rows=Array.from(document.querySelectorAll(`#ranges-${key} .range-entry`));
+        userVal=rows.map(r=>[parseFloat(r.querySelector('.range-start').value),parseFloat(r.querySelector('.range-end').value)]).filter(p=>!p.some(isNaN));
+        if(!userVal.length){showQuickToast(key,'הקלידו לפחות תקופה אחת.');return;}
+        const norm=arr=>arr.map(([a,b])=>a<=b?[a,b]:[b,a]).sort((p,q)=>p[0]-q[0]);
+        const a=norm(userVal), b=norm(sq.expected), tol=sq.tolerance||0;
+        isCorrect=a.length===b.length && a.every((p,i)=>Math.abs(p[0]-b[i][0])<=tol && Math.abs(p[1]-b[i][1])<=tol);
+        feedbackMsg=isCorrect?`נכון מאוד! ${sq.explanation}`:'עדיין לא. חפשו את כל הקטעים האופקיים והזינו את תחילת וסוף כל תקופה.';
+      } else if (sq.type === 'radio') {
+        const selected = document.querySelector(`input[name="rb-${key}"]:checked`);
+        if (!selected) {
+          showQuickToast(key, 'אנא בחרו אחת מהאפשרויות.');
+          return;
+        }
+        userVal = selected.value;
+
+        if (userVal === sq.expected) {
+          isCorrect = true;
+          feedbackMsg = `נכון מאוד! ${sq.explanation}`;
+        } else {
+          isCorrect = false;
+          feedbackMsg = `בחירה לא נכונה. שימו לב להגדרות הצירים או לקצב השינוי.`;
+        }
+      }
+
+      // Store in progress state
+      studentResponses[key] = {
+        answered: true,
+        isCorrect: isCorrect,
+        value: userVal,
+        message: feedbackMsg
+      };
+
+      showFeedbackUI(key, isCorrect, feedbackMsg);
+      renderNavPills();
+      updateGlobalScore();
+      updateSolutionAccess();
+    }
+
+    /**
+     * Feedback UI updates
+     */
+    function showFeedbackUI(key, isCorrect, message) {
+      const card = document.getElementById(`card-${key}`);
+      const badge = document.getElementById(`badge-${key}`);
+      const fb = document.getElementById(`feedback-${key}`);
+
+      badge.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800');
+      fb.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'border-emerald-200', 'bg-rose-50', 'text-rose-900', 'border-rose-200');
+
+      if (isCorrect) {
+        card.classList.add('border-emerald-300', 'bg-emerald-50/20');
+        card.classList.remove('border-rose-300', 'bg-rose-50/20');
+        badge.classList.add('bg-emerald-100', 'text-emerald-800');
+        badge.innerText = '✓ נכון';
+        fb.classList.add('bg-emerald-50', 'text-emerald-900', 'border', 'border-emerald-200');
+        fb.innerHTML = `<strong>כל הכבוד!</strong> ${formatMixedHtml(message)}`;
+      } else {
+        card.classList.add('border-rose-300', 'bg-rose-50/20');
+        card.classList.remove('border-emerald-300', 'bg-emerald-50/20');
+        badge.classList.add('bg-rose-100', 'text-rose-800');
+        badge.innerText = '✗ שגוי';
+        fb.classList.add('bg-rose-50', 'text-rose-900', 'border', 'border-rose-200');
+        fb.innerHTML = `<strong>נסו שוב:</strong> ${formatMixedHtml(message)}`;
+      }
+    }
+
+    function showQuickToast(key, msg) {
+      const fb = document.getElementById(`feedback-${key}`);
+      fb.classList.remove('hidden', 'bg-emerald-50', 'bg-rose-50');
+      fb.classList.add('bg-amber-50', 'text-amber-900', 'border', 'border-amber-200');
+      fb.innerText = msg;
+    }
+
+    function formatMixedHtml(text) {
+      if (!text) return '';
+
+      // מנקים סימני כיווניות סמויים שעלולים להפוך מינוסים בתוך ביטויים.
+      const clean = String(text).replace(/[\u200e\u200f\u061c]/g, '');
+
+      // כל מקטע מתמטי / שעה מקבל בידוד LTR בתוך המשפט העברי.
+      // כך 10 − (−7) = 17, זוגות סדורים, x=11 ושעות לא מתהפכים ב-RTL.
+      const tokenRegex = /(\(\s*[−-]?\d+(?:\.\d+)?\s*,\s*[−-]?\d+(?:\.\d+)?\s*\)|\b[xy]\s*=\s*[−-]?\d+(?:\.\d+)?|\b\d{1,2}:\d{2}\b|(?:\(?[−-]?\d+(?:\.\d+)?\)?\s*(?:[+\-−×÷\/=]\s*)+){1,}[−-]?\d+(?:\.\d+)?)/g;
+
+      return clean.replace(tokenRegex, (m) => {
+        const cls = /^\d{1,2}:\d{2}$/.test(m) ? 'time-ltr' : 'math-ltr';
+        return `<span class="${cls}" dir="ltr">${m}</span>`;
+      });
+    }
+
+    function formatSolutionHtml(text) {
+      return formatMixedHtml(text);
+    }
+
+    function isCurrentQuestionFullyChecked() {
+      const q = questionsDatabase[currentQuestionIndex];
+      return q.subQuestions.every(sq => studentResponses[`${q.id}_${sq.id}`]?.answered === true);
+    }
+
+    function updateSolutionAccess() {
+      const btn = document.getElementById('fullSolutionBtn');
+      const txt = document.getElementById('fullSolutionBtnText');
+      if (!btn || !txt) return;
+      const unlocked = isCurrentQuestionFullyChecked();
+      btn.disabled = !unlocked;
+      btn.querySelector('span:first-child').textContent = unlocked ? '📘' : '🔒';
+      txt.textContent = unlocked ? 'פתרון מלא מודרך' : 'פתרון מלא – לאחר בדיקת כל הסעיפים';
+      if (!unlocked) document.getElementById('questionSolutionModal').classList.add('hidden');
+    }
+
+    /**
+     * Renders detailed solution steps inside drawer
+     */
+    function renderSolutionSteps(question) {
+      const container = document.getElementById('solutionStepsList');
+      container.innerHTML = '';
+
+      question.subQuestions.forEach(sq => {
+        const div = document.createElement('div');
+        div.className = 'bg-slate-50 p-4 rounded-2xl border border-slate-100';
+        div.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-slate-900 mb-1.5">
+            <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-800 text-xs flex items-center justify-center">${sq.label}</span>
+            <h4 class="mixed-rtl">${formatMixedHtml(sq.prompt)}</h4>
+          </div>
+          <p class="mixed-rtl text-xs sm:text-sm text-slate-700 leading-relaxed mt-2">${formatSolutionHtml(sq.explanation)}</p>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function toggleCurrentSolution() {
+      if (!isCurrentQuestionFullyChecked()) return;
+      const modal = document.getElementById('questionSolutionModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        modal.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function toggleHint(hintId) {
+      const el = document.getElementById(hintId);
+      if (el) el.classList.toggle('hidden');
+    }
+
+    function toggleAllHintsOnPage() {
+      const hints = document.querySelectorAll('.sub-hint');
+      const anyHidden = Array.from(hints).some(h => h.classList.contains('hidden'));
+      hints.forEach(h => {
+        if (anyHidden) h.classList.remove('hidden');
+        else h.classList.add('hidden');
+      });
+    }
+
+    /**
+     * Updates global progress score
+     */
+    function updateGlobalScore() {
+      let totalSubs = 0;
+      let solvedSubs = 0;
+
+      questionsDatabase.forEach(q => {
+        q.subQuestions.forEach(sq => {
+          totalSubs++;
+          if (studentResponses[`${q.id}_${sq.id}`]?.isCorrect) {
+            solvedSubs++;
+          }
+        });
+      });
+
+      document.getElementById('globalSolvedCount').innerText = solvedSubs;
+      const pct = totalSubs > 0 ? Math.round((solvedSubs / totalSubs) * 100) : 0;
+      document.getElementById('globalScorePct').innerText = `${pct}%`;
+    }
+
+    function resetCurrentQuestion() {
+      const q = questionsDatabase[currentQuestionIndex];
+      q.subQuestions.forEach(sq => {
+        delete studentResponses[`${q.id}_${sq.id}`];
+      });
+      loadQuestion(currentQuestionIndex);
+    }
+
+    // Initialize application when DOM is ready
+    window.addEventListener('load', () => {
+      initApp();
+    });
+  </script>
+</body>
+</html>
