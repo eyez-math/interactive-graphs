@@ -120,6 +120,15 @@
       #questionCertificate{ width:100%; padding:12px !important; }
     }
 
+    .cert-modal{position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px}
+    .cert-modal-card{width:min(560px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:24px;padding:20px;box-shadow:0 20px 60px rgba(15,23,42,.25)}
+    .cert-select-item{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #e2e8f0;border-radius:14px;padding:11px 12px;margin-top:8px}
+    .combined-capture{position:fixed;left:-9999px;top:0;width:390px;background:#f8fafc;padding:12px;direction:rtl}
+    .combined-cert-question{background:#fff;border:2px solid #bbf7d0;border-radius:22px;padding:16px;margin-bottom:12px;color:#0f172a}
+    .combined-cert-question table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+    .combined-cert-question th,.combined-cert-question td{padding:7px 4px;border-bottom:1px solid #e2e8f0;vertical-align:top;word-break:break-word}
+    .combined-cert-question .cert-answer{text-align:center;overflow-wrap:anywhere}
+
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
@@ -172,6 +181,7 @@
           <div id="globalScorePct" class="text-sm font-extrabold text-emerald-600">0%</div>
         </div>
       </div>
+      <button id="certificatesBtn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold px-4 py-2.5 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed" disabled>אישורים (0)</button>
 
     </div>
 
@@ -276,8 +286,7 @@
       </div>
       <div id="questionCheckMessage" class="hidden mt-3 rounded-xl p-3 text-sm"></div>
       <div id="questionResultActions" class="hidden mt-4 flex flex-col sm:flex-row gap-2 justify-end">
-        <button type="button" onclick="scrollToQuestionCertificate()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl">צפייה באישור והורדה</button>
-        <button type="button" onclick="downloadQuestionCertificate()" class="bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold px-5 py-2.5 rounded-xl">הורד אישור כתמונה</button>
+        <button type="button" onclick="openCertificatesCenter()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl">אישורים שנבדקו</button>
       </div>
     </section>
 
@@ -310,6 +319,20 @@
         <button onclick="downloadQuestionCertificate()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl">הורד אישור כתמונה</button>
       </div>
     </section>
+
+
+    <div id="certCenterModal" class="hidden cert-modal">
+      <div class="cert-modal-card">
+        <div class="flex items-start justify-between gap-3">
+          <div><h3 class="text-xl font-black">אישורי ביצוע</h3><p class="text-sm text-slate-500 mt-1">כל השאלות שכבר נבדקו מסומנות מראש. אפשר לבחור אילו מהן לכלול בקובץ.</p></div>
+          <button id="closeCertCenter" type="button" class="w-9 h-9 rounded-full bg-slate-100 font-bold">✕</button>
+        </div>
+        <div id="certQuestionList" class="mt-4"></div>
+        <div id="certCenterEmpty" class="hidden mt-4 p-4 bg-slate-50 rounded-xl text-slate-600 text-sm">עדיין לא נבדקה אף שאלה.</div>
+        <button id="downloadSelectedCertsBtn" type="button" class="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl">הורד אישורים נבחרים כתמונה אחת</button>
+      </div>
+    </div>
+    <div id="combinedCertificateCapture" class="combined-capture"></div>
 
     <section id="questionSolutionModal" class="hidden mt-8 bg-white border-2 border-indigo-100 rounded-3xl p-4 sm:p-6 shadow-md transition-all">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -2168,23 +2191,16 @@
       const correct=q.subQuestions.filter(sq=>studentResponses[`${q.id}_${sq.id}`]?.isCorrect).length;
       const total=q.subQuestions.length;
       const score=Math.round(correct/total*100);
-      questionStatus[q.id]={locked:true,correct,total,score};
+      questionStatus[q.id]={locked:true,correct,total,score,completedAt:new Date().toISOString()};
       lockCurrentQuestionUI();
-      // מציגים קודם את אזור הפעולות והאישור, כדי שכשל בתצוגה לא יעלים את כפתורי ההורדה.
       document.getElementById('questionResultActions').classList.remove('hidden');
-      document.getElementById('questionCertificatePanel').classList.remove('hidden');
-      try {
-        renderQuestionCertificate(q);
-      } catch (err) {
-        console.error('Certificate render failed:', err);
-      }
+      updateCertificatesButton();
       msg.className='mt-3 rounded-xl p-3 text-sm bg-emerald-50 border border-emerald-200 text-emerald-900';
-      msg.textContent=`השאלה נבדקה וננעלה. הציון בשאלה: ${score}%. כעת ניתן לצפות בפתרון המלא ולהוריד אישור.`;
+      msg.textContent=`השאלה נבדקה וננעלה. הציון בשאלה: ${score}%. כעת ניתן לצפות בפתרון המלא. האישורים של כל השאלות שנבדקו מרוכזים בכפתור „אישורים” בראש המסך.`;
       msg.classList.remove('hidden');
       updateSolutionAccess();
       updateGlobalScore();
       renderNavPills();
-      setTimeout(()=>scrollToQuestionCertificate(), 120);
     }
 
     function lockCurrentQuestionUI() {
@@ -2212,8 +2228,8 @@
       document.getElementById('questionResultActions').classList.add('hidden');
       if (st?.locked) {
         lockCurrentQuestionUI();
-        renderQuestionCertificate(q);
         document.getElementById('questionResultActions').classList.remove('hidden');
+        updateCertificatesButton();
         msg.className='mt-3 rounded-xl p-3 text-sm bg-emerald-50 border border-emerald-200 text-emerald-900';
         msg.textContent=`השאלה כבר נבדקה וננעלה בסבב הנוכחי. הציון: ${st.score}%.`;
         msg.classList.remove('hidden');
@@ -2287,6 +2303,73 @@
       }
     }
 
+    function completedQuestions() {
+      return questionsDatabase.map((q,i)=>({q,i,status:questionStatus[q.id]})).filter(x=>x.status?.locked);
+    }
+
+    function updateCertificatesButton() {
+      const list=completedQuestions();
+      const btn=document.getElementById('certificatesBtn');
+      if(!btn) return;
+      btn.textContent=`אישורים (${list.length})`;
+      btn.disabled=list.length===0;
+    }
+
+    function openCertificatesCenter() {
+      const list=completedQuestions();
+      const modal=document.getElementById('certCenterModal');
+      const box=document.getElementById('certQuestionList');
+      modal.classList.remove('hidden');
+      box.innerHTML=list.map(({q,i,status})=>`<label class="cert-select-item"><span class="flex items-center gap-3"><input type="checkbox" class="cert-pick w-5 h-5" value="${q.id}" checked><span><strong>שאלה ${i+1}: ${q.title.replace(/^\s*\d+\s*[.\-:]\s*/, '')}</strong><span class="block text-xs text-slate-500 mt-1">ציון: ${status.score}% · ${status.correct}/${status.total}</span></span></span><span class="text-emerald-700 font-black">${status.score}%</span></label>`).join('');
+      document.getElementById('certCenterEmpty').classList.toggle('hidden',list.length>0);
+      const dl=document.getElementById('downloadSelectedCertsBtn');
+      dl.disabled=list.length===0;
+      dl.classList.toggle('opacity-50',list.length===0);
+    }
+
+    function closeCertificatesCenter() {
+      document.getElementById('certCenterModal').classList.add('hidden');
+    }
+
+    function certificateQuestionHtml(q,index) {
+      const st=questionStatus[q.id];
+      const rows=q.subQuestions.map(sq=>{
+        const r=studentResponses[`${q.id}_${sq.id}`];
+        return `<tr><td><strong>${sq.label}</strong></td><td class="cert-answer mixed-rtl">${formatMixedHtml(displayAnswerValue(r?.value))}</td><td>${r?.isCorrect?'✓ נכון':'✗ לא נכון'}</td></tr>`;
+      }).join('');
+      const dt=st.completedAt?new Date(st.completedAt):new Date();
+      const cleanTitle=q.title.replace(/^\s*\d+\s*[.\-:]\s*/, '');
+      return `<section class="combined-cert-question"><div class="text-center"><div class="text-blue-700 font-extrabold text-xs">גרפים כיתה י׳- 3 יחידות</div><div class="text-lg font-black mt-1">אישור ביצוע – שאלה ${index+1}</div><div class="text-xs text-slate-500 mt-1">${cleanTitle}</div></div><div class="border-t border-slate-200 mt-3 pt-3" style="display:grid;grid-template-columns:1fr;gap:6px;font-size:12px"><div><span class="text-slate-500">תלמיד/ה:</span> <strong>${studentInfo.name}</strong></div><div><span class="text-slate-500">כיתה:</span> <strong>${studentInfo.className}</strong></div><div><span class="text-slate-500">מורה:</span> <strong>${studentInfo.teacherName}</strong></div></div><div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-center my-3"><div class="text-xs text-emerald-700">תשובות נכונות</div><div class="text-xl font-black text-emerald-800">${st.correct}/${st.total}</div><div class="text-sm font-extrabold mt-1">ציון: ${st.score}%</div></div><table><thead><tr><th style="width:13%">סעיף</th><th style="width:58%">תשובת התלמיד</th><th style="width:29%">תוצאה</th></tr></thead><tbody>${rows}</tbody></table><div class="mt-3 text-[10px] text-slate-400" dir="ltr">${dt.toLocaleDateString('he-IL')} ${dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</div></section>`;
+    }
+
+    function buildCombinedCertificate(ids) {
+      const selected=new Set(ids);
+      const items=questionsDatabase.map((q,i)=>({q,i})).filter(x=>selected.has(x.q.id)&&questionStatus[x.q.id]?.locked);
+      document.getElementById('combinedCertificateCapture').innerHTML=`<div class="text-center mb-3"><div class="font-black text-lg">אישורי ביצוע</div><div class="text-xs text-slate-500">${studentInfo.name} · ${studentInfo.className}</div></div>`+items.map(({q,i})=>certificateQuestionHtml(q,i)).join('');
+      return items.length;
+    }
+
+    async function downloadSelectedCertificates() {
+      const ids=Array.from(document.querySelectorAll('.cert-pick:checked')).map(x=>x.value);
+      if(!ids.length){alert('בחרו לפחות שאלה אחת.');return;}
+      buildCombinedCertificate(ids);
+      const node=document.getElementById('combinedCertificateCapture');
+      try {
+        const canvas=await html2canvas(node,{scale:2,backgroundColor:'#f8fafc',useCORS:true,logging:false,width:390,windowWidth:390});
+        const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        if(!blob) throw new Error('image export failed');
+        const a=document.createElement('a');
+        const safe=(studentInfo.name||'תלמיד').replace(/[^\\w\\u0590-\\u05FF-]+/g,'_');
+        a.download=`אישורי-גרפים-${safe}.png`;
+        a.href=URL.createObjectURL(blob);
+        document.body.appendChild(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+      } catch(err) {
+        console.error(err);
+        alert('לא ניתן ליצור את התמונה כרגע. נסו שוב.');
+      }
+    }
+
     function loadStudentLists() {
       // הכיתות קבועות ביישומון ושם המורה מוזן ידנית.
       validateStudentGate();
@@ -2305,6 +2388,7 @@
       studentInfo.teacherName=document.getElementById('studentTeacherInput').value.trim();
       if(!studentInfo.name || !studentInfo.className || !studentInfo.teacherName) return;
       document.getElementById('studentGate').classList.add('hidden');
+      updateCertificatesButton();
     }
 
     /**
@@ -2451,6 +2535,10 @@
         const el=document.getElementById(id); el.addEventListener('input',validateStudentGate); el.addEventListener('change',validateStudentGate);
       });
       document.getElementById('studentStartBtn').addEventListener('click',startStudentSession);
+      document.getElementById('certificatesBtn').addEventListener('click',openCertificatesCenter);
+      document.getElementById('closeCertCenter').addEventListener('click',closeCertificatesCenter);
+      document.getElementById('downloadSelectedCertsBtn').addEventListener('click',downloadSelectedCertificates);
+      document.getElementById('certCenterModal').addEventListener('click',e=>{if(e.target===document.getElementById('certCenterModal'))closeCertificatesCenter();});
       loadStudentLists();
     });
   </script>
